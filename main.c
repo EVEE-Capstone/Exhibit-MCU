@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "Graph.h"
+#include "./graph_traversal/Graph.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 //A function that is used to create a new AdjListNode
 struct AdjListNode* createAdjListNode(int val, int hueristic){
@@ -49,4 +51,26 @@ void printGraph(struct Graph* graph){
         }
         printf("\n");
     }
+}
+
+int main(void){
+    const int size = 10;
+    struct Graph * graph1 = createGraph(size);
+
+    addEdge(graph1, 1, 2);
+    addEdge(graph1, 1, 6);
+    addEdge(graph1, 6, 7);
+    addEdge(graph1, 6, 9);
+    addEdge(graph1, 6, 5);
+    addEdge(graph1, 4, 5);
+    addEdge(graph1, 4, 3);
+    addEdge(graph1, 3, 2);
+    addEdge(graph1, 2, 8);
+    addEdge(graph1, 8, 7);
+    addEdge(graph1, 7, 10);
+    addEdge(graph1, 10, 9);
+
+    printGraph(graph1);
+
+    return 0;
 }

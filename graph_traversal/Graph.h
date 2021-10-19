@@ -1,5 +1,3 @@
-//All of the functions to create a graph and all of the structs needed
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -22,11 +20,11 @@ struct Graph{
 };
 
 //A function that is used to create a new AdjListNode
-struct AdjListNode* CreateAdjListNode(int val);
+struct AdjListNode* createAdjListNode(int val, int hueristic);
 //A function that is used to create a new Graph
-struct Graph* CreateGraph(int size);
+struct Graph* createGraph(int size);
 
 //A function that adds an edge between start->end & end->start
 void addEdge(struct Graph* graph, int start, int end);
 
-void PrintGraph(struct Graph* graph);
+void printGraph(struct Graph* graph);
