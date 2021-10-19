@@ -6,6 +6,7 @@
 //Represents the NODES that make up the AdjList
 struct AdjListNode{
     int val; // value at that node
+    int hueristic; //Hueristic value for the node
     struct AdjListNode* next; //next node in the AdjList
 };
 
