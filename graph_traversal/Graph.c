@@ -1,13 +1,12 @@
-//All of the functions to create a graph and all of the structs needed
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "Graph.h"
 
 //A function that is used to create a new AdjListNode
-struct AdjListNode* CreateAdjListNode(int val){
+struct AdjListNode* CreateAdjListNode(int val, int hueristic){
     struct AdjListNode* newNode = (struct AdjListNode*) malloc(sizeof(struct AdjListNode)); //Allocate the space for the new node
     newNode->val = val; //Set the value as the value we want
+    newNode->hueristic = hueristic; //Set the hueristic value
     newNode->next = NULL; //Make the pointer to the next value NULL for now
     return newNode;
 }
