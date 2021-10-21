@@ -50,3 +50,24 @@ void printGraph(struct Graph* graph){
         printf("\n");
     }
 }
+
+struct Graph* CreateExhibitGraph(){
+    const int size = 10;
+    struct Graph * graph1 = createGraph(size);
+    addEdge(graph1, 1, 2);
+    addEdge(graph1, 1, 6);
+    addEdge(graph1, 6, 7);
+    addEdge(graph1, 6, 9);
+    addEdge(graph1, 6, 5);
+    addEdge(graph1, 4, 5);
+    addEdge(graph1, 4, 3);
+    addEdge(graph1, 3, 2);
+    addEdge(graph1, 2, 8);
+    addEdge(graph1, 8, 7);
+    addEdge(graph1, 7, 10);
+    addEdge(graph1, 10, 9);
+
+    printGraph(graph1);
+
+    return graph1
+}

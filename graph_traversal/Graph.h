@@ -21,10 +21,15 @@ struct Graph{
 
 //A function that is used to create a new AdjListNode
 struct AdjListNode* createAdjListNode(int val, int hueristic);
+
 //A function that is used to create a new Graph
 struct Graph* createGraph(int size);
 
 //A function that adds an edge between start->end & end->start
 void addEdge(struct Graph* graph, int start, int end);
 
+//A function to print out our graph
 void printGraph(struct Graph* graph);
+
+//A function that will create our exhibit's graph
+struct Graph* CreateExhibitGraph();

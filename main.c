@@ -83,7 +83,7 @@ void printGraph(struct Graph* graph)
     for (v = 0; v < graph->V; ++v)
     {
         struct AdjListNode* pCrawl = graph->array[v].head;
-        printf("\n Adjacency list of vertex %d\n head ", );
+        printf("\n Adjacency list of vertex %d\n head ", v);
         while (pCrawl)
         {
             printf("-> %d", pCrawl->dest);
@@ -119,6 +119,24 @@ int main()
   
     // print the adjacency list representation of the above graph
     printGraph(graph);
-  
-    return 0;
 }
+// int main(void){
+//     const int size = 10;
+//     struct Graph * graph1 = createGraph(size);
+//     addEdge(graph1, 1, 2);
+//     addEdge(graph1, 1, 6);
+//     addEdge(graph1, 6, 7);
+//     addEdge(graph1, 6, 9);
+//     addEdge(graph1, 6, 5);
+//     addEdge(graph1, 4, 5);
+//     addEdge(graph1, 4, 3);
+//     addEdge(graph1, 3, 2);
+//     addEdge(graph1, 2, 8);
+//     addEdge(graph1, 8, 7);
+//     addEdge(graph1, 7, 10);
+//     addEdge(graph1, 10, 9);
+
+//     printGraph(graph1);
+
+//     return 0;
+// }
