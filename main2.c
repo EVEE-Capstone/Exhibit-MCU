@@ -2,7 +2,7 @@
 #include <stdlib.h>
  
 // Define the maximum number of vertices in the graph
-#define N 6
+#define N 12
  
 // Data structure to store a graph object
 struct Graph
@@ -92,9 +92,36 @@ int main(void)
 {
     // input array containing edges of the graph (as per the above diagram)
     // `(x, y)` pair in the array represents an edge from `x` to `y`
-    struct Edge edges[] =
+    // struct Edge edges[] =
+    // {
+    //     {0, 500}, { 0, 1 }, {0,200}, 
+    //     { 1, 2 }, {1,0}, 
+    //     { 2, 200 }, { 2, 1 }, {2,100}, {2,3}, 
+    //     { 3, 2 }, {3,4}, {3,5}, {3,6},
+    //     { 4, 3 }, { 4,200}, {4,300},
+    //     {5,3}, {5,100}, {5,400},
+    //     {6,3},{6,300},{6,400},
+    //     {100,2}, {100,5},
+    //     {200,0}, {200,2}, {200,4},
+    //     {300,4}, {300,6},
+    //     {400,5}, {400,6},
+    //     {500, 0}
+    // };
+
+        struct Edge edges[] =
     {
-        { 0, 1 }, { 1, 2 }, { 2, 0 }, { 2, 1 }, { 3, 2 }, {3,4}, { 4, 5 }, { 5, 4 }
+        {0, 11}, { 0, 1 }, {0,8}, 
+        { 1, 2 }, {1,0}, 
+        { 2, 8 }, { 2, 1 }, {2,7}, {2,3}, 
+        { 3, 2 }, {3,4}, {3,5}, {3,6},
+        { 4, 3 }, { 4,8}, {4,9},
+        {5,3}, {5,7}, {5,10},
+        {6,3},{6,9},{6,10},
+        {7,2}, {7,5},
+        {8,0}, {8,2}, {8,4},
+        {9,4}, {9,6},
+        {10,5}, {10,6},
+        {11, 0}
     };
  
     // calculate the total number of edges
