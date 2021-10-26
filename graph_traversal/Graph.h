@@ -1,35 +1,42 @@
+// A C Program to demonstrate adjacency list 
+// representation of graphs
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-//Represents the NODES that make up the AdjList
-struct AdjListNode{
-    int val; // value at that node
-    int hueristic; //Hueristic value for the node
-    struct AdjListNode* next; //next node in the AdjList
+// A structure to represent an adjacency list node
+struct AdjListNode
+{
+    int dest;
+    char type[5];
+    struct AdjListNode* next;
 };
-
-//Represents the list of Adjacent nodes 
-struct AdjList{
-    struct AdjListNode *head; //pointer to the first element of the AdjList
+  
+// A structure to represent an adjacency list
+struct AdjList
+{
+    struct AdjListNode *head; 
 };
-
-//Represents the graph as a whole
-struct Graph{
-    int size; //max number of vertices in the AdjList
-    struct AdjList* array; //An array of all the AdjList made. 
+  
+// A structure to represent a graph. A graph
+// is an array of adjacency lists.
+// Size of array will be V (number of vertices 
+// in graph)
+struct Graph
+{
+    int V;
+    struct AdjList* array;
 };
-
-//A function that is used to create a new AdjListNode
-struct AdjListNode* createAdjListNode(int val, int hueristic);
-
-//A function that is used to create a new Graph
-struct Graph* createGraph(int size);
-
-//A function that adds an edge between start->end & end->start
-void addEdge(struct Graph* graph, int start, int end);
-
-//A function to print out our graph
+  
+// A utility function to create a new adjacency list node
+struct AdjListNode* newAdjListNode(int dest);
+  
+// A utility function that creates a graph of V vertices
+struct Graph* createGraph(int V);
+  
+// Adds an edge to an undirected graph
+void addEdge(struct Graph* graph, int src, int dest, char srcType[5], char destType[5]);
+  
+// A utility function to print the adjacency list 
+// representation of graph
 void printGraph(struct Graph* graph);
-
-//A function that will create our exhibit's graph
-struct Graph* CreateExhibitGraph();
