@@ -52,7 +52,6 @@ struct AdjListNode
 {
     int val;
     char type[5];
-    int visited;
     struct AdjListNode* next;
 };
   
@@ -79,7 +78,6 @@ struct AdjListNode* newAdjListNode(int val)
      (struct AdjListNode*) malloc(sizeof(struct AdjListNode));
     newNode->val = val;
     newNode->next = NULL;
-    newNode->visited = 0;
     return newNode;
 }
   
@@ -145,63 +143,82 @@ void printGraph(struct Graph* graph)
   
 int * bfs(struct Graph* graph, int V, int start, int end){
 
-    int i = 0, v;
-    v = start;
+    int v = start;
     int parent[V];
+    int visited[V];
     int path[V];
     int length = 0;
     for(int j = 0; j < V; j++){
         parent[j] = -1;
         path[j] = -1;
+        visited[j] = 0;
     }
 
     push_queue(v);
 
     while(!isEmpty_queue()){
         v = pop_queue();
-        struct AdjListNode* s = graph->array[v].head;
-        parent[s->val] = v;
-        if(s->val == end){
+        if(visited[v] == 1) //check if visited
+            continue;
+        visited[v] = 1; //if not, mark vertex as visited
+
+        struct AdjListNode* s = graph->array[v].head; //get adjacency list of vertex
+        
+        //if end, backtrace and print path
+
+        if(v == end){
             int x = end;
-            while(x != start){
-                if(i == 0){
-                    path[i] = end;
-                    x = parent[end];
-                }
-                else{
-                    path[i] = x;
-                    x = parent[x];
-                }
-                i++;
+            //build path by backtracing the parent 
+            for(int i = 0; i < V; i++){
+                if(x == start) break;
+                path[i] = x;
+                x = parent[x];
             }
             for(int j = 0; j < V; j++){
                 if(path[j] != -1){
                     length++;
                 }
             }
-            int path_out[length];
-            for(int i = 0; i < length; i++){
-                path_out[i] = path[length - 1 - i];
+
+            int path_out[length + 1];
+
+            for(int i = 0; i < length + 1; i++){
+                if(i == 0){ //set first value to path length
+                    path_out[0] = length;
+                    printf("Path Length: %d\n", path_out[0]);
+                    printf("Path: ");
+                    printf("%d -> ", start);
+                    continue;
+                }
+                
+                path_out[i] = path[length - i];
                 if(path_out[i] == end){
                     printf("%d\n", path_out[i]);
                 }
                 else{
-                    printf("%d ->", path_out[i]);
+                    printf("%d -> ", path_out[i]);
                 }
             }
+
+            //clear the queue
+            while(!isEmpty_queue()){
+                pop_queue();
+            }
+
             return path_out;
             break;
         }
-        if(s->visited == 1)
-            continue;
-        
-        s->visited = 1;
 
-        while (s)
-        {
+        //else, go through adjacency list and push to queue
+
+        while(s){
+            if(parent[s->val] == -1)
+                parent[s->val] = v;
             push_queue(s->val);
             s = s->next;
         }
+
+       
     }
     return NULL;
 }
@@ -242,9 +259,17 @@ int main()
     // print the adjacency list representation of the above graph
     // printGraph(graph);
 
-    int * p = bfs(graph, V, 0, 18);
+    int * p1 = bfs(graph, V, 0, 18); // expected: 0 -> 9 -> 18 -> 10
 
-    // Find Path
+    int * p2 = bfs(graph, V, 1, 5); // expected: 1 -> 2 -> 7 -> 6 -> 5
+
+    int * p3 = bfs(graph, V, 2, 13); // expected: 2 -> 7 -> 6 -> 13
+
+    int * p4 = bfs(graph, V, 13, 14); // expected: 13 -> 14
+
+    // test that output is as expected
+
+    
   
     return 0;
 }
