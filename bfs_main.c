@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define MAX 100  
+#define MAX 500  
 
 int queue[MAX];
 int front = -1;
@@ -24,7 +24,7 @@ void push_queue(int vertex)
       queue[rear] = vertex ;
    }
 }
- 
+
 int isEmpty_queue()
 {
    if(front == -1 || front > rear)
@@ -142,7 +142,6 @@ void printGraph(struct Graph* graph)
 }
   
 int * bfs(struct Graph* graph, int V, int start, int end){
-
     int v = start;
     int parent[V];
     int visited[V];
@@ -199,7 +198,6 @@ int * bfs(struct Graph* graph, int V, int start, int end){
                     printf("%d -> ", path_out[i]);
                 }
             }
-
             //clear the queue
             while(!isEmpty_queue()){
                 pop_queue();
@@ -259,8 +257,8 @@ int main()
     // print the adjacency list representation of the above graph
     // printGraph(graph);
 
-    int * p1 = bfs(graph, V, 0, 18); // expected: 0 -> 9 -> 18 -> 10
-
+    int * p1 = bfs(graph, V, 0, 18); // expected: 0 -> 9 -> 10 -> 18
+    
     int * p2 = bfs(graph, V, 1, 5); // expected: 1 -> 2 -> 7 -> 6 -> 5
 
     int * p3 = bfs(graph, V, 2, 13); // expected: 2 -> 7 -> 6 -> 13
