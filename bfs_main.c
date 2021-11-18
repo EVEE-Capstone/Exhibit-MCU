@@ -185,7 +185,7 @@ int * bfs(struct Graph* graph, int V, int start, int end){
             for(int i = 0; i < length + 1; i++){
                 if(i == 0){ //set first value to path length
                     path_out[0] = length;
-                    printf("Path Length: %d\n", path_out[0]);
+                    // printf("Path Length: %d\n", path_out[0]);
                     printf("Path: ");
                     printf("%d -> ", start);
                     continue;
@@ -267,9 +267,5 @@ int main()
 
     int * p4 = bfs(graph, V, 13, 14); // expected: 13 -> 14
 
-    // test that output is as expected
-
-    
-  
     return 0;
 }
