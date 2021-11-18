@@ -157,7 +157,7 @@ int main(void)
   initLeuart();
 
   // Print the welcome message
-  char welcomeString[] = "LEUART echo code example\r\n";
+  char welcomeString[] = "WELCOME\r\n";
   for (uint32_t i = 0 ; welcomeString[i] != 0; i++) {
     txBuffer[i] = welcomeString[i];
   }
