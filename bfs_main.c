@@ -178,14 +178,14 @@ int * bfs(struct Graph* graph, int V, int start, int end){
                     length++;
                 }
             }
-
+                
             int path_out[length + 1];
 
             for(int i = 0; i < length + 1; i++){
                 if(i == 0){ //set first value to path length
                     path_out[0] = length;
                     // printf("Path Length: %d\n", path_out[0]);
-                    printf("Path: ");
+                    printf("Path from vertex %d to %d: ", start, end);
                     printf("%d -> ", start);
                     continue;
                 }
