@@ -4,10 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 #define MAX 100  
-
+#define NUM_VERTICES 19
 int queue[MAX];
 int front = -1;
 int rear = -1;
+int path_out[NUM_VERTICES];
+
 void push_queue(int vertex);
 int pop_queue();
 int isEmpty_queue();
@@ -141,7 +143,11 @@ void printGraph(struct Graph* graph)
     }
 }
   
-int * bfs(struct Graph* graph, int V, int start, int end){
+void bfs(struct Graph* graph, int V, int start, int end){
+    if(start < 0 || end < 0 || start > V - 1 || end > V - 1){
+        printf("Invalid start and end inputs.\n");
+        return;
+    }
     int v = start;
     int parent[V];
     int visited[V];
@@ -152,7 +158,10 @@ int * bfs(struct Graph* graph, int V, int start, int end){
         path[j] = -1;
         visited[j] = 0;
     }
-
+    //clear global path output variable
+    for(int i = 0; i < NUM_VERTICES; i++){
+        path_out[i] = -1;
+    }
     push_queue(v);
 
     while(!isEmpty_queue()){
@@ -179,24 +188,21 @@ int * bfs(struct Graph* graph, int V, int start, int end){
                 }
             }
                 
-            int path_out[length + 1];
-
             for(int i = 0; i < length + 1; i++){
-                if(i == 0){ //set first value to path length
-                    path_out[0] = length;
-                    // printf("Path Length: %d\n", path_out[0]);
-                    printf("Path from vertex %d to %d: ", start, end);
-                    printf("%d -> ", start);
+                if(i == 0){ //set first value to start
+                    path_out[0] = start;
+                    // printf("Path from vertex %d to %d: ", start, end);
+                    // printf("%d -> ", start);
                     continue;
                 }
                 
                 path_out[i] = path[length - i];
-                if(path_out[i] == end){
-                    printf("%d\n", path_out[i]);
-                }
-                else{
-                    printf("%d -> ", path_out[i]);
-                }
+                // if(path_out[i] == end){
+                //     printf("%d\n", path_out[i]);
+                // }
+                // else{
+                //     printf("%d -> ", path_out[i]);
+                // }
             }
             //clear the queue
             while(!isEmpty_queue()){
@@ -205,7 +211,6 @@ int * bfs(struct Graph* graph, int V, int start, int end){
             front = -1;
             rear = -1;
 
-            return path_out;
             break;
         }
 
@@ -220,15 +225,14 @@ int * bfs(struct Graph* graph, int V, int start, int end){
 
        
     }
-    return NULL;
 }
 
 // Driver program to test above functions
 int main()
 {
     // CREATE GRAPH
-    int V = 19; //define number of vertices
-    
+    int V = NUM_VERTICES; //define number of vertices
+
     struct Graph* graph = createGraph(V);
     addEdge(graph, 0, 1, "road", "dest");
     addEdge(graph, 1, 2, "dest", "road");
@@ -259,11 +263,61 @@ int main()
     // print the adjacency list representation of the above graph
     // printGraph(graph);
 
-    int * p1 = bfs(graph, V, 0, 13); // expected: 0 -> 9 -> 10 -> 18
-    int * p2 = bfs(graph, V, 1, 5); // expected: 1 -> 2 -> 7 -> 6 -> 5
-    int * p3 = bfs(graph, V, 2, 13); // expected: 2 -> 7 -> 6 -> 13
-    int * p4 = bfs(graph, V, 13, 14); // expected: 13 -> 14
-    int * p5 = bfs(graph, V, 17, 5); // expected: 17 -> 16 -> 15 -> 14 -> 4 -> 5
+    bfs(graph, V, 0, 18); // expected: 0 -> 9 -> 10 -> 18
+    printf("Path from vertex 0 to 18: ");
+    for(int i = 0; i < NUM_VERTICES; i++){
+        if(path_out[i] == -1) {
+            printf("\n");
+            break;
+        }
+        if(i == 0) {
+            printf("%d", path_out[i]);
+        }
+        else printf(" -> %d", path_out[i]);
+    }
+    bfs(graph, V, 1, 5); // expected: 1 -> 2 -> 7 -> 6 -> 5
 
+    printf("Path from vertex 1 to 5: ");
+    for(int i = 0; i < NUM_VERTICES; i++){
+        if(path_out[i] == -1) {
+            printf("\n");
+            break;
+        }
+        if(i == 0) printf("%d", path_out[i]);
+        else printf(" -> %d", path_out[i]);
+    }
+    bfs(graph, V, 2, 13); // expected: 2 -> 7 -> 6 -> 13
+    printf("Path from vertex 2 to 13: ");
+    for(int i = 0; i < NUM_VERTICES; i++){
+        if(path_out[i] == -1) {
+            printf("\n");
+            break;
+        }
+        if(i == 0) printf("%d", path_out[i]);
+        else printf(" -> %d", path_out[i]);
+    }
+
+    bfs(graph, V, 13, 14); // expected: 13 -> 14
+    printf("Path from vertex 13 to 14: ");
+    for(int i = 0; i < NUM_VERTICES; i++){
+        if(path_out[i] == -1) {
+            printf("\n");
+            break;
+        }
+        if(i == 0) printf("%d", path_out[i]);
+        else printf(" -> %d", path_out[i]);
+    }
+
+    bfs(graph, V, 17, 5); // expected: 17 -> 16 -> 15 -> 14 -> 4 -> 5
+    printf("Path from vertex 17 to 5: ");
+    for(int i = 0; i < NUM_VERTICES; i++){
+        if(path_out[i] == -1) {
+            printf("\n");
+            break;
+        }
+        if(i == 0) printf("%d", path_out[i]);
+        else printf(" -> %d", path_out[i]);
+    }
+ 
     return 0;
 }
