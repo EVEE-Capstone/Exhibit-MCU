@@ -143,7 +143,7 @@ void printGraph(struct Graph* graph)
     }
 }
   
-void bfs(struct Graph* graph, int V, int start, int end){
+void findPath(struct Graph* graph, int V, int start, int end){
     if(start < 0 || end < 0 || start > V - 1 || end > V - 1){
         printf("Invalid start and end inputs.\n");
         return;
@@ -191,18 +191,10 @@ void bfs(struct Graph* graph, int V, int start, int end){
             for(int i = 0; i < length + 1; i++){
                 if(i == 0){ //set first value to start
                     path_out[0] = start;
-                    // printf("Path from vertex %d to %d: ", start, end);
-                    // printf("%d -> ", start);
                     continue;
                 }
                 
                 path_out[i] = path[length - i];
-                // if(path_out[i] == end){
-                //     printf("%d\n", path_out[i]);
-                // }
-                // else{
-                //     printf("%d -> ", path_out[i]);
-                // }
             }
             //clear the queue
             while(!isEmpty_queue()){
@@ -240,6 +232,7 @@ void print_path(int start, int end){
         else printf(" -> %d", path_out[i]);
     }
 }
+
 // Driver program to test above functions
 int main()
 {
@@ -276,19 +269,19 @@ int main()
     // print the adjacency list representation of the above graph
     // printGraph(graph);
 
-    bfs(graph, V, 0, 18); // expected: 0 -> 9 -> 10 -> 18
+    findPath(graph, V, 0, 15); // expected: 0 -> 9 -> 10 -> 18
     print_path(0,18);
     
-    bfs(graph, V, 1, 5); // expected: 1 -> 2 -> 7 -> 6 -> 5
+    findPath(graph, V, 1, 5); // expected: 1 -> 2 -> 7 -> 6 -> 5
     print_path(1,5);
     
-    bfs(graph, V, 2, 13); // expected: 2 -> 7 -> 6 -> 13
+    findPath(graph, V, 2, 13); // expected: 2 -> 7 -> 6 -> 13
     print_path(2,13);
     
-    bfs(graph, V, 13, 14); // expected: 13 -> 14
+    findPath(graph, V, 13, 14); // expected: 13 -> 14
     print_path(13,14);
     
-    bfs(graph, V, 17, 5); // expected: 17 -> 16 -> 15 -> 14 -> 4 -> 5
+    findPath(graph, V, 17, 5); // expected: 17 -> 16 -> 15 -> 14 -> 4 -> 5
     print_path(17,5);
  
     return 0;
