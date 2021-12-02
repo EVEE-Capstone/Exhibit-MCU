@@ -227,6 +227,19 @@ void bfs(struct Graph* graph, int V, int start, int end){
     }
 }
 
+void print_path(int start, int end){
+    printf("Path from vertex %d to %d: ", start, end);
+    for(int i = 0; i < NUM_VERTICES; i++){
+        if(path_out[i] == -1) {
+            printf("\n");
+            break;
+        }
+        if(i == 0) {
+            printf("%d", path_out[i]);
+        }
+        else printf(" -> %d", path_out[i]);
+    }
+}
 // Driver program to test above functions
 int main()
 {
@@ -264,60 +277,19 @@ int main()
     // printGraph(graph);
 
     bfs(graph, V, 0, 18); // expected: 0 -> 9 -> 10 -> 18
-    printf("Path from vertex 0 to 18: ");
-    for(int i = 0; i < NUM_VERTICES; i++){
-        if(path_out[i] == -1) {
-            printf("\n");
-            break;
-        }
-        if(i == 0) {
-            printf("%d", path_out[i]);
-        }
-        else printf(" -> %d", path_out[i]);
-    }
+    print_path(0,18);
+    
     bfs(graph, V, 1, 5); // expected: 1 -> 2 -> 7 -> 6 -> 5
-
-    printf("Path from vertex 1 to 5: ");
-    for(int i = 0; i < NUM_VERTICES; i++){
-        if(path_out[i] == -1) {
-            printf("\n");
-            break;
-        }
-        if(i == 0) printf("%d", path_out[i]);
-        else printf(" -> %d", path_out[i]);
-    }
+    print_path(1,5);
+    
     bfs(graph, V, 2, 13); // expected: 2 -> 7 -> 6 -> 13
-    printf("Path from vertex 2 to 13: ");
-    for(int i = 0; i < NUM_VERTICES; i++){
-        if(path_out[i] == -1) {
-            printf("\n");
-            break;
-        }
-        if(i == 0) printf("%d", path_out[i]);
-        else printf(" -> %d", path_out[i]);
-    }
-
+    print_path(2,13);
+    
     bfs(graph, V, 13, 14); // expected: 13 -> 14
-    printf("Path from vertex 13 to 14: ");
-    for(int i = 0; i < NUM_VERTICES; i++){
-        if(path_out[i] == -1) {
-            printf("\n");
-            break;
-        }
-        if(i == 0) printf("%d", path_out[i]);
-        else printf(" -> %d", path_out[i]);
-    }
-
+    print_path(13,14);
+    
     bfs(graph, V, 17, 5); // expected: 17 -> 16 -> 15 -> 14 -> 4 -> 5
-    printf("Path from vertex 17 to 5: ");
-    for(int i = 0; i < NUM_VERTICES; i++){
-        if(path_out[i] == -1) {
-            printf("\n");
-            break;
-        }
-        if(i == 0) printf("%d", path_out[i]);
-        else printf(" -> %d", path_out[i]);
-    }
+    print_path(17,5);
  
     return 0;
 }
