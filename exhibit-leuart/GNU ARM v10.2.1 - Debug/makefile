@@ -31,7 +31,7 @@ all: SLSTK3400A_EFM32HG_leuart_echo.axf
 SLSTK3400A_EFM32HG_leuart_echo.axf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GNU ARM C Linker'
-	arm-none-eabi-gcc -g -gdwarf-2 -mcpu=cortex-m0plus -mthumb -T "SLSTK3400A_EFM32HG_leuart_echo.ld" -Xlinker --gc-sections -Xlinker -Map="SLSTK3400A_EFM32HG_leuart_echo.map" --specs=nano.specs -o SLSTK3400A_EFM32HG_leuart_echo.axf "./CMSIS/EFM32HG/startup_efm32hg.o" "./CMSIS/EFM32HG/system_efm32hg.o" "./emlib/em_cmu.o" "./emlib/em_core.o" "./emlib/em_emu.o" "./emlib/em_gpio.o" "./emlib/em_leuart.o" "./emlib/em_system.o" "./src/main_s0.o" -Wl,--start-group -lgcc -lc -lnosys -Wl,--end-group
+	arm-none-eabi-gcc -g -gdwarf-2 -mcpu=cortex-m0plus -mthumb -T "SLSTK3400A_EFM32HG_leuart_echo.ld" -Xlinker --gc-sections -Xlinker -Map="SLSTK3400A_EFM32HG_leuart_echo.map" --specs=nano.specs -o SLSTK3400A_EFM32HG_leuart_echo.axf "./src/main_s0.o" "./emlib/em_cmu.o" "./emlib/em_core.o" "./emlib/em_emu.o" "./emlib/em_gpio.o" "./emlib/em_leuart.o" "./emlib/em_system.o" "./CMSIS/EFM32HG/startup_efm32hg.o" "./CMSIS/EFM32HG/system_efm32hg.o" -lgcc -lc -lm -lnosys -Wl,--start-group -lgcc -lc -lnosys -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

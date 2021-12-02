@@ -267,7 +267,7 @@ int main()
     addEdge(graph, 18, 17, "road", "dest");
 
     // print the adjacency list representation of the above graph
-    // printGraph(graph);
+    printGraph(graph);
 
     findPath(graph, V, 0, 15); // expected: 0 -> 9 -> 10 -> 18
     print_path(0,18);
