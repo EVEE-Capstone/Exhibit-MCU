@@ -44,6 +44,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "usart.h"
+
 #define MAX 100
 #define NUM_VERTICES  19
 
@@ -147,6 +149,10 @@ void initGpio(void)
   // Initialize LEUART0 TX and RX pins
   GPIO_PinModeSet(gpioPortD, 10, gpioModePushPull, 1); // TX
   GPIO_PinModeSet(gpioPortD, 11, gpioModeInput, 0);    // RX
+
+  // Initialize USART2 TX and RX pins
+  GPIO_PinModeSet(gpioPortA, 6, gpioModePushPull, 1); // TX
+  GPIO_PinModeSet(gpioPortA, 7, gpioModeInput, 0);    // RX
 }
 
 /**************************************************************************//**
@@ -463,6 +469,10 @@ int main(void)
   initGpio();
   initLeuart();
   initGraph();
+  ble_usart_open();
+
+  char str[20];
+
 
 
   LEUART_IntSet(LEUART0, LEUART_IFS_TXC);
@@ -495,8 +505,17 @@ int main(void)
       LEUART_IntSet(LEUART0, LEUART_IFS_TXC);
     }
 
-    // Wait for incoming data in EM2 to save energy
-    EMU_EnterEM2(false);
+    // Test reads with usart BLE
+    if(ble_newData()){      // ble_newData serves same purpose as rxDataReady above
+        ble_read(str);      // uses strcpy, assumes communication is chars/strings
+
+        ble_write(str);     // print back what was read
+        ble_write("\n");
+
+    }
+
+    // lowest energy mode we can enter is EM1 due to USART
+    EMU_EnterEM1();
   }
 }
 
