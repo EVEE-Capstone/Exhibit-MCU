@@ -150,9 +150,13 @@ void initGpio(void)
   GPIO_PinModeSet(gpioPortD, 10, gpioModePushPull, 1); // TX
   GPIO_PinModeSet(gpioPortD, 11, gpioModeInput, 0);    // RX
 
-  // Initialize USART2 TX and RX pins
+  // Initialize USART2 TX and RX pins for BLE
   GPIO_PinModeSet(gpioPortA, 6, gpioModePushPull, 1); // TX
   GPIO_PinModeSet(gpioPortA, 7, gpioModeInput, 0);    // RX
+
+  // Initialize USART3 TX and RX pins for ARDUINO
+  GPIO_PinModeSet(gpioPortB, 6, gpioModePushPull, 1); // USART3_TX
+  GPIO_PinModeSet(gpioPortB, 7, gpioModeInput, 0);    // USART3_RX
 }
 
 /**************************************************************************//**
@@ -442,12 +446,6 @@ void getStartVertex()
 {
   g_src = 0;
 }
-
-void clearTxBuffer(){
-  for (int i = 0; i < RX_BUFFER_SIZE; i++) {
-    txBuffer[i] = '\0' ; // Copy rxBuffer into txBuffer
-  }
-}
 /**************************************************************************//**
  * @brief
  *    Main function
@@ -479,7 +477,8 @@ int main(void)
 
   char str[20];
 
-
+  // TODO: remove after test
+  ble_write("#test!");     // print back what was read test only
 
   LEUART_IntSet(LEUART0, LEUART_IFS_TXC);
 
@@ -489,25 +488,22 @@ int main(void)
     // When notified by the RX handler, start processing the received data
     if (rxDataReady) {
       LEUART_IntDisable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Disable interrupts
-      clearTxBuffer();;
+
       for (i = 0; rxBuffer[i] != 0; i++) {
         txBuffer[i] = rxBuffer[i]; // Copy rxBuffer into txBuffer
       }
 
-//      getStartVertex();
-//      getEndVertex();
-//
-//      bfs(graph, NUM_VERTICES, g_src, g_dest);
-//
-//      for(i = 0; i < NUM_VERTICES; i++){
-//          sprintf(txBuffer, "%s%d,", txBuffer, path_out[i]);
-//      }
+      getStartVertex();
+      getEndVertex();
 
-      ble_write(txBuffer); // send to car
+      bfs(graph, NUM_VERTICES, g_src, g_dest);
+
+      for(i = 0; i < NUM_VERTICES; i++){
+          sprintf(txBuffer, "%s%d,", txBuffer, path_out[i]);
+      }
 
       printf("%s", txBuffer);
       txBuffer[i - 1] = '\0';
-
 
       rxDataReady = 0; // Indicate that we need new data
       LEUART_IntEnable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Re-enable interrupts
