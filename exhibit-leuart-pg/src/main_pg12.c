@@ -480,7 +480,6 @@ int main(void)
   char str[20];
 
 
-
   LEUART_IntSet(LEUART0, LEUART_IFS_TXC);
 
   uint32_t i;
@@ -489,37 +488,30 @@ int main(void)
     // When notified by the RX handler, start processing the received data
     if (rxDataReady) {
       LEUART_IntDisable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Disable interrupts
-      clearTxBuffer();;
+
       for (i = 0; rxBuffer[i] != 0; i++) {
         txBuffer[i] = rxBuffer[i]; // Copy rxBuffer into txBuffer
       }
 
-//      getStartVertex();
-//      getEndVertex();
-//
-//      bfs(graph, NUM_VERTICES, g_src, g_dest);
-//
-//      for(i = 0; i < NUM_VERTICES; i++){
-//          sprintf(txBuffer, "%s%d,", txBuffer, path_out[i]);
-//      }
-
       ble_write(txBuffer); // send to car
 
-      printf("%s", txBuffer);
-      txBuffer[i - 1] = '\0';
+      txBuffer[i] = '\0';
 
 
       rxDataReady = 0; // Indicate that we need new data
-      LEUART_IntEnable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Re-enable interrupts
-      LEUART_IntSet(LEUART0, LEUART_IFS_TXC);
     }
 
     // Test reads with usart BLE
     if(ble_newData()){      // ble_newData serves same purpose as rxDataReady above
+
         ble_read(str);      // uses strcpy, assumes communication is chars/strings
 
-        ble_write(str);     // print back what was read
-        ble_write("\n");
+        for (i = 0; str[i] != 0; i++) {
+          txBuffer[i] = str[i]; // Copy rxBuffer into txBuffer
+        }
+        txBuffer[i] = '\0';
+        LEUART_IntEnable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Re-enable interrupts
+        LEUART_IntSet(LEUART0, LEUART_IFS_TXC);
 
     }
 
