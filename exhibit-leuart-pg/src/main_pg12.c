@@ -150,9 +150,13 @@ void initGpio(void)
   GPIO_PinModeSet(gpioPortD, 10, gpioModePushPull, 1); // TX
   GPIO_PinModeSet(gpioPortD, 11, gpioModeInput, 0);    // RX
 
-  // Initialize USART2 TX and RX pins
+  // Initialize USART2 TX and RX pins for BLE
   GPIO_PinModeSet(gpioPortA, 6, gpioModePushPull, 1); // TX
   GPIO_PinModeSet(gpioPortA, 7, gpioModeInput, 0);    // RX
+
+  // Initialize USART3 TX and RX pins for ARDUINO
+  GPIO_PinModeSet(gpioPortB, 6, gpioModePushPull, 1); // USART3_TX
+  GPIO_PinModeSet(gpioPortB, 7, gpioModeInput, 0);    // USART3_RX
 }
 
 /**************************************************************************//**
@@ -444,22 +448,6 @@ void getStartVertex()
   g_src = 0;
 }
 
-void getPathOut()
-{
-  int i = 0;
-  int j = 1;
-  // edge [i,j]
-  while(path_out[j] != -1){
-     struct AdjListNode* s = graph->array[path_out[i]].head;
-     i++;
-     j++;
-  }
-}
-void clearTxBuffer(){
-  for (int i = 0; i < RX_BUFFER_SIZE; i++) {
-    txBuffer[i] = '\0' ; // Copy rxBuffer into txBuffer
-  }
-}
 /**************************************************************************//**
  * @brief
  *    Main function
@@ -507,8 +495,17 @@ int main(void)
 
       ble_write(txBuffer); // send to car
 
-      txBuffer[i] = '\0';
+      getStartVertex();
+      getEndVertex();
 
+      bfs(graph, NUM_VERTICES, g_src, g_dest);
+
+      for(i = 0; i < NUM_VERTICES; i++){
+          sprintf(txBuffer, "%s%d,", txBuffer, path_out[i]);
+      }
+
+
+      txBuffer[i] = '\0';
 
       rxDataReady = 0; // Indicate that we need new data
       LEUART_IntEnable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Re-enable interrupts
