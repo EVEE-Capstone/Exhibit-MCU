@@ -33,22 +33,13 @@
  * as a demonstration for evaluation purposes only. This code will be maintained
  * at the sole discretion of Silicon Labs.
  ******************************************************************************/
-#include "em_device.h"
-#include "em_cmu.h"
-#include "em_emu.h"
-#include "em_gpio.h"
-#include "em_leuart.h"
-#include "em_chip.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "usart.h"
-
 #define MAX 100
 #define NUM_VERTICES  19
-
+#define NUM_EDGES 52
 #define START_VERTEX 0
 #define END_VERTEX 9
 #define HOME 1
@@ -63,11 +54,14 @@ void initGraph();
 
 struct Graph* createGraph(int V);
 struct AdjListNode* newAdjListNode(int val);
+struct GraphEdge* newGraphEdge(int start, int end, char dir);
 int queue[MAX];
 int front = -1;
 int rear = -1;
 int path_out[NUM_VERTICES];
+char instructions[NUM_VERTICES];
 struct Graph* graph;
+struct GraphEdge* edges[NUM_EDGES];
 int g_src;
 int g_dest;
 
@@ -110,8 +104,14 @@ int pop_queue()
 struct AdjListNode
 {
     int val;
-    char type[5];
     struct AdjListNode* next;
+};
+
+struct GraphEdge
+{
+    int start;
+    int end;
+    char dir;
 };
 
 // A structure to represent an adjacency list
@@ -137,96 +137,7 @@ static uint32_t rxDataReady = 0;      // Flag indicating receiver does not have 
 static volatile char rxBuffer[RX_BUFFER_SIZE]; // Software receive buffer
 static char txBuffer[RX_BUFFER_SIZE]; // Software transmit buffer
 
-/**************************************************************************//**
- * @brief
- *    Initialize the GPIO pins for the LEUART module
- *****************************************************************************/
-void initGpio(void)
-{
-  // GPIO clock
-  CMU_ClockEnable(cmuClock_GPIO, true);
 
-  // Initialize LEUART0 TX and RX pins
-  GPIO_PinModeSet(gpioPortD, 10, gpioModePushPull, 1); // TX
-  GPIO_PinModeSet(gpioPortD, 11, gpioModeInput, 0);    // RX
-
-  // Initialize USART2 TX and RX pins
-  GPIO_PinModeSet(gpioPortA, 6, gpioModePushPull, 1); // TX
-  GPIO_PinModeSet(gpioPortA, 7, gpioModeInput, 0);    // RX
-}
-
-/**************************************************************************//**
- * @brief
- *    Initialize the LEUART module
- *****************************************************************************/
-void initLeuart(void)
-{
-  // Enable LE (low energy) clocks
-  CMU_ClockEnable(cmuClock_HFLE, true); // Necessary for accessing LE modules
-  CMU_ClockSelectSet(cmuClock_LFB, cmuSelect_LFXO); // Set a reference clock
-
-  // Enable clocks for LEUART0
-  CMU_ClockEnable(cmuClock_LEUART0, true);
-  CMU_ClockDivSet(cmuClock_LEUART0, cmuClkDiv_1); // Don't prescale LEUART clock
-
-  // Initialize the LEUART0 module
-  LEUART_Init_TypeDef init = LEUART_INIT_DEFAULT;
-  LEUART_Init(LEUART0, &init);
-
-  // Enable LEUART0 RX/TX pins on PD[11:10] (see readme.txt for details)
-  LEUART0->ROUTEPEN  = LEUART_ROUTEPEN_RXPEN | LEUART_ROUTEPEN_TXPEN;
-  LEUART0->ROUTELOC0 = LEUART_ROUTELOC0_RXLOC_LOC18 | LEUART_ROUTELOC0_TXLOC_LOC18;
-
-  // Enable LEUART0 RX/TX interrupts
-  LEUART_IntEnable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC);
-  NVIC_EnableIRQ(LEUART0_IRQn);
-}
-
-/**************************************************************************//**
- * @brief
- *    LEUART0 interrupt service routine
- *
- * @details
- *    Keep receiving data while there is still data left in the hardware RX buffer.
- *    Store incoming data into rxBuffer and set rxDataReady when a linefeed '\n' is
- *    sent or if there is no more room in the buffer.
- *****************************************************************************/
-void LEUART0_IRQHandler(void)
-{
-  // Note: These are static because the handler will exit/enter
-  //       multiple times to fully transmit a message.
-  static uint32_t rxIndex = 0;
-  static uint32_t txIndex = 0;
-
-  // Acknowledge the interrupt
-  uint32_t flags = LEUART_IntGet(LEUART0);
-  LEUART_IntClear(LEUART0, flags);
-
-  // RX portion of the interrupt handler
-  if (flags & LEUART_IF_RXDATAV) {
-    while (LEUART0->STATUS & LEUART_STATUS_RXDATAV) { // While there is still incoming data
-      char data = LEUART_Rx(LEUART0);
-      if ((rxIndex < RX_BUFFER_SIZE - 2) && (data != '\n')) { // Save two spots for '\n' and '\0'
-        rxBuffer[rxIndex++] = data;
-      } else { // Done receiving
-        rxBuffer[rxIndex++] = '\n';
-        rxBuffer[rxIndex] = '\0';
-        rxDataReady = 1;
-        rxIndex = 0;
-        break;
-      }
-    }
-  }
-
-  // TX portion of the interrupt handler
-  if (flags & LEUART_IF_TXC) {
-    if ((txIndex < RX_BUFFER_SIZE) && (txBuffer[txIndex] != '\0')) {
-      LEUART_Tx(LEUART0, txBuffer[txIndex++]); // Send the data
-    } else { // Done transmitting
-      txIndex = 0;
-    }
-  }
-}
 
 
 // A utility function to create a new adjacency list node
@@ -237,6 +148,16 @@ struct AdjListNode* newAdjListNode(int val)
     newNode->val = val;
     newNode->next = NULL;
     return newNode;
+}
+
+struct GraphEdge* newGraphEdge(int start, int end, char dir)
+{
+    struct GraphEdge* newEdge =
+     (struct GraphEdge*) malloc(sizeof(struct GraphEdge));
+    newEdge->start = start;
+    newEdge->end = end;
+    newEdge->dir = dir;
+    return newEdge;
 }
 
 
@@ -262,22 +183,34 @@ struct Graph* createGraph(int V)
 }
 
 // Adds an edge to an undirected graph
-void addEdge(struct Graph* graph, int src, int dest, char srcType[5], char destType[5])
+void addEdge(struct Graph* graph, int src, int dest, char srcType, char destType)
 {
     // Add an edge from src to dest.  A new node is
     // added to the adjacency list of src.  The node
     // is added at the beginning
     struct AdjListNode* destNode = newAdjListNode(dest);
-    strcpy(destNode->type, srcType);
+    struct GraphEdge * destEdge = newGraphEdge(src, dest, srcType);
+    
+    for(int i = 0; i < NUM_EDGES; i++){
+        if(edges[i] == NULL){
+            edges[i] = destEdge;
+            break;
+        }
+    }
     destNode->next = graph->array[src].head;
     graph->array[src].head = destNode;
-
     // Since graph is undirected, add an edge from
     // dest to src also
     struct AdjListNode* srcNode = newAdjListNode(src);
-    strcpy(srcNode->type, destType);
+    struct GraphEdge * srcEdge = newGraphEdge(dest, src, destType);
+        for(int i = 0; i < NUM_EDGES; i++){
+        if(edges[i] == NULL){
+            edges[i] = srcEdge;
+            break;
+        }
+    }
     srcNode->next = graph->array[dest].head;
-    graph->array[dest].head = srcNode;
+    graph->array[dest].head = srcNode;    
 }
 
 // A utility function to print the adjacency list
@@ -289,14 +222,22 @@ void printGraph(struct Graph* graph)
     for (v = 0; v < graph->V; v++)
     {
         struct AdjListNode* pCrawl = graph->array[v].head;
-        printf("\n Adjacency list of vertex %d\n %d (%s) ", v, v, pCrawl->type);
+        printf("\n Adjacency list of vertex %d\n %d", v, v);
         while (pCrawl)
         {
             printf("-> %d", pCrawl->val);
-            printf("-> %s", pCrawl->type);
             pCrawl = pCrawl->next;
         }
         printf("\n");
+    }
+}
+
+void printEdges()
+{
+    for(int v = 0; v < NUM_EDGES; v++){
+        if(edges[v] != NULL){
+            printf("edge %d to %d, %c\n", edges[v]->start, edges[v]->end, edges[v]->dir);
+        }
     }
 }
 
@@ -392,31 +333,31 @@ void initGraph()
     int V = NUM_VERTICES; //define number of vertices
 
     graph = createGraph(V);
-    addEdge(graph, 0, 1, "L", "R");
-    addEdge(graph, 1, 2, "L", "R");
-    addEdge(graph, 2, 3, "road", "road");
-    addEdge(graph, 0, 9, "road", "road");
-    addEdge(graph, 2, 7, "road", "road");
-    addEdge(graph, 3, 4, "road", "road");
-    addEdge(graph, 4, 5, "road", "dest");
-    addEdge(graph, 5, 6, "dest", "road");
-    addEdge(graph, 6, 7, "road", "road");
-    addEdge(graph, 7, 8, "road", "road");
-    addEdge(graph, 8, 9, "road", "road");
-    addEdge(graph, 4, 14, "road", "road");
-    addEdge(graph, 6, 13, "road", "road");
-    addEdge(graph, 8, 11, "road", "road");
-    addEdge(graph, 9, 10, "road", "road");
-    addEdge(graph, 10, 11, "road", "road");
-    addEdge(graph, 11, 12, "road", "road");
-    addEdge(graph, 12, 13, "road", "road");
-    addEdge(graph, 13, 14, "road", "road");
-    addEdge(graph, 14, 15, "road", "road");
-    addEdge(graph, 10, 18, "road", "road");
-    addEdge(graph, 12, 16, "road", "road");
-    addEdge(graph, 15, 16, "road", "road");
-    addEdge(graph, 16, 17, "road", "dest");
-    addEdge(graph, 18, 17, "road", "dest");
+    addEdge(graph, 0, 1, 'L', 'R');
+    addEdge(graph, 1, 2, 'L', 'R');
+    addEdge(graph, 2, 3, 'S', 'S');
+    addEdge(graph, 0, 9, 'L', 'R');
+    addEdge(graph, 2, 7, 'L', 'R');
+    addEdge(graph, 3, 4,'L', 'R');
+    addEdge(graph, 4, 5,'L', 'R');
+    addEdge(graph, 5, 6, 'L', 'R');
+    addEdge(graph, 6, 7, 'L', 'R');
+    addEdge(graph, 7, 8, 'L', 'R');
+    addEdge(graph, 8, 9, 'L', 'R');
+    addEdge(graph, 4, 14, 'L', 'R');
+    addEdge(graph, 6, 13, 'L', 'R');
+    addEdge(graph, 8, 11, 'L', 'R');
+    addEdge(graph, 9, 10, 'L', 'R');
+    addEdge(graph, 10, 11, 'L', 'R');
+    addEdge(graph, 11, 12, 'L', 'R');
+    addEdge(graph, 12, 13, 'S', 'S');
+    addEdge(graph, 13, 14, 'L', 'R');
+    addEdge(graph, 14, 15, 'L', 'R');
+    addEdge(graph, 10, 18, 'S', 'S');
+    addEdge(graph, 12, 16, 'L', 'R');
+    addEdge(graph, 15, 16, 'L', 'R');
+    addEdge(graph, 16, 17, 'L', 'R');
+    addEdge(graph, 18, 17, 'L', 'R');
 
     g_src = START_VERTEX;
     g_dest = END_VERTEX;
@@ -444,16 +385,25 @@ void getStartVertex()
   g_src = 0;
 }
 
+char getEdgeDir(int start, int end){
+    for(int i = 0; i < NUM_EDGES; i++){
+        if(edges[i]->start == start && edges[i]->end == end){
+           return edges[i]->dir;
+        }
+    }
+    return 'n';
+}
 void getPathOut()
 {
-  int i = 0;
-  int j = 1;
-  // edge [i,j]
-  while(path_out[j] != -1){
-     struct AdjListNode* s = graph->array[path_out[i]].head;
-     i++;
-     j++;
-  }
+    //edge[i,j]
+    int i = 0;
+    int j = 1;
+
+    while(path_out[j] != -1){
+        instructions[i] = getEdgeDir(path_out[i], path_out[j]);
+        i++;
+        j++;
+    }
 }
 void clearTxBuffer(){
   for (int i = 0; i < RX_BUFFER_SIZE; i++) {
@@ -476,64 +426,16 @@ void clearTxBuffer(){
  *****************************************************************************/
 int main(void)
 {
-  // Chip errata
-  CHIP_Init();
-
-  // Init DCDC regulator with kit specific parameters
-  EMU_DCDCInit_TypeDef dcdcInit = EMU_DCDCINIT_DEFAULT;
-  EMU_DCDCInit(&dcdcInit);
 
   // Initialization
-  initGpio();
-  initLeuart();
   initGraph();
-  ble_usart_open();
+  printGraph(graph);
+  printEdges();
+  bfs(graph, NUM_VERTICES, 0, 5);
+  getPathOut();
 
-  char str[20];
-
-
-  LEUART_IntSet(LEUART0, LEUART_IFS_TXC);
-
-  uint32_t i;
-  while (1) {
-
-    // When notified by the RX handler, start processing the received data
-    if (rxDataReady) {
-      LEUART_IntDisable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Disable interrupts
-
-      for (i = 0; rxBuffer[i] != 0; i++) {
-        txBuffer[i] = rxBuffer[i]; // Copy rxBuffer into txBuffer
-      }
-
-      ble_write(txBuffer); // send to car
-
-      txBuffer[i] = '\0';
-
-
-      rxDataReady = 0; // Indicate that we need new data
-      LEUART_IntEnable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Re-enable interrupts
-      LEUART_IntSet(LEUART0, LEUART_IFS_TXC);
-
-    }
-
-    // Test reads with usart BLE
-    if(ble_newData()){      // ble_newData serves same purpose as rxDataReady above
-        LEUART_IntDisable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Disable interrupts
-
-        ble_read(str);      // uses strcpy, assumes communication is chars/strings
-
-        for (i = 0; str[i] != 0; i++) {
-          txBuffer[i] = str[i]; // Copy rxBuffer into txBuffer
-        }
-
-        txBuffer[i] = '\0';
-        LEUART_IntEnable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Re-enable interrupts
-        LEUART_IntSet(LEUART0, LEUART_IFS_TXC);
-
-    }
-
-    // lowest energy mode we can enter is EM1 due to USART
-    EMU_EnterEM1();
+  for(int i = 0; i < NUM_VERTICES; i++){
+      printf("%c", instructions[i]);
   }
 }
 
