@@ -18,6 +18,5 @@ C_DEPS :=
 SUBDIRS := \
 CMSIS/EFM32PG12B \
 emlib \
-peripheral \
 src \
 

@@ -9,6 +9,7 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include src/subdir.mk
+-include peripheral/subdir.mk
 -include emlib/subdir.mk
 -include CMSIS/EFM32PG12B/subdir.mk
 -include subdir.mk
@@ -31,7 +32,7 @@ all: SLSTK3402A_EFM32PG12B_leuart_echo.axf
 SLSTK3402A_EFM32PG12B_leuart_echo.axf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GNU ARM C Linker'
-	arm-none-eabi-gcc -g -gdwarf-2 -mcpu=cortex-m4 -mthumb -T "SLSTK3402A_EFM32PG12B_leuart_echo.ld" -Xlinker --gc-sections -Xlinker -Map="SLSTK3402A_EFM32PG12B_leuart_echo.map" -mfpu=fpv4-sp-d16 -mfloat-abi=softfp --specs=nano.specs -o SLSTK3402A_EFM32PG12B_leuart_echo.axf "./CMSIS/EFM32PG12B/startup_efm32pg12b.o" "./CMSIS/EFM32PG12B/system_efm32pg12b.o" "./emlib/em_cmu.o" "./emlib/em_core.o" "./emlib/em_emu.o" "./emlib/em_gpio.o" "./emlib/em_leuart.o" "./emlib/em_system.o" "./emlib/em_usart.o" "./src/main_pg12.o" "./src/usart.o" -Wl,--start-group -lgcc -lc -lnosys -Wl,--end-group
+	arm-none-eabi-gcc -g -gdwarf-2 -mcpu=cortex-m4 -mthumb -T "SLSTK3402A_EFM32PG12B_leuart_echo.ld" -Xlinker --gc-sections -Xlinker -Map="SLSTK3402A_EFM32PG12B_leuart_echo.map" -mfpu=fpv4-sp-d16 -mfloat-abi=softfp --specs=nano.specs -o SLSTK3402A_EFM32PG12B_leuart_echo.axf "./CMSIS/EFM32PG12B/startup_efm32pg12b.o" "./CMSIS/EFM32PG12B/system_efm32pg12b.o" "./emlib/em_usart.o" "./peripheral/peripheral_keyscan.o" "./peripheral/peripheral_sysrtc.o" "./src/em_usart.o" "./src/main_pg12.o" "./src/usart.o" -Wl,--start-group -lgcc -lc -lnosys -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

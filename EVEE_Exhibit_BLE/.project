@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>SLSTK3402A_EFM32PG12B_leuart_echo</name>
+	<name>EVEE_Exhibit_BLE</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -52,16 +52,6 @@
 			<name>emlib/em_system.c</name>
 			<type>1</type>
 			<locationURI>STUDIO_SDK_LOC/platform/emlib/src/em_system.c</locationURI>
-		</link>
-		<link>
-			<name>peripheral/peripheral_keyscan.c</name>
-			<type>1</type>
-			<locationURI>STUDIO_SDK_LOC/platform/peripheral/src/peripheral_keyscan.c</locationURI>
-		</link>
-		<link>
-			<name>peripheral/peripheral_sysrtc.c</name>
-			<type>1</type>
-			<locationURI>STUDIO_SDK_LOC/platform/peripheral/src/peripheral_sysrtc.c</locationURI>
 		</link>
 		<link>
 			<name>CMSIS/EFM32PG12B/startup_gcc_efm32pg12b.s</name>
