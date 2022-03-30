@@ -47,14 +47,17 @@
 #define OUTAGE 5
 #define SOLAR 17
 #define INSTRUCTIONS_SIZE 1000
-
+#define LEFT 'L'
+#define RIGHT 'R'
+#define STRAIGHT 'S'
+#define HALT 'H'
 void push_queue(int vertex);
 int pop_queue();
 int isEmpty_queue();
 void initGraph();
 
 struct Graph *createGraph(int V);
-struct AdjListNode *newAdjListNode(int val);
+struct AdjListNode *newAdjListNode(int index, char * id);
 struct GraphEdge *newGraphEdge(int start, int end, char dir);
 int queue[MAX];
 int front = -1;
@@ -104,7 +107,8 @@ int pop_queue()
 // A structure to represent an adjacency list node
 struct AdjListNode
 {
-    int val;
+    int index;
+    char * id;
     struct AdjListNode *next;
 };
 
@@ -138,11 +142,12 @@ static volatile char rxBuffer[RX_BUFFER_SIZE]; // Software receive buffer
 static char txBuffer[RX_BUFFER_SIZE];          // Software transmit buffer
 
 // A utility function to create a new adjacency list node
-struct AdjListNode *newAdjListNode(int val)
+struct AdjListNode *newAdjListNode(int index, char * id)
 {
     struct AdjListNode *newNode =
         (struct AdjListNode *)malloc(sizeof(struct AdjListNode));
-    newNode->val = val;
+    newNode->index = index;
+    newNode->id = id;
     newNode->next = NULL;
     return newNode;
 }
@@ -179,12 +184,12 @@ struct Graph *createGraph(int V)
 }
 
 // Adds an edge to an undirected graph
-void addEdge(struct Graph *graph, int src, int dest, char srcType, char destType)
+void addEdge(struct Graph *graph, int src, int dest, char * srcId, char * destId, char srcType, char destType)
 {
     // Add an edge from src to dest.  A new node is
     // added to the adjacency list of src.  The node
     // is added at the beginning
-    struct AdjListNode *destNode = newAdjListNode(dest);
+    struct AdjListNode *destNode = newAdjListNode(dest, destId);
     struct GraphEdge *destEdge = newGraphEdge(src, dest, srcType);
 
     for (int i = 0; i < NUM_EDGES; i++)
@@ -199,7 +204,7 @@ void addEdge(struct Graph *graph, int src, int dest, char srcType, char destType
     graph->array[src].head = destNode;
     // Since graph is undirected, add an edge from
     // dest to src also
-    struct AdjListNode *srcNode = newAdjListNode(src);
+    struct AdjListNode *srcNode = newAdjListNode(src, srcId);
     struct GraphEdge *srcEdge = newGraphEdge(dest, src, destType);
     for (int i = 0; i < NUM_EDGES; i++)
     {
@@ -225,7 +230,7 @@ void printGraph(struct Graph *graph)
         printf("\n Adjacency list of vertex %d\n %d", v, v);
         while (pCrawl)
         {
-            printf("-> %d", pCrawl->val);
+            printf("-> %d", pCrawl->index);
             pCrawl = pCrawl->next;
         }
         printf("\n");
@@ -332,9 +337,9 @@ void bfs(struct Graph *graph, int V, int start, int end)
 
         while (s)
         {
-            if (parent[s->val] == -1)
-                parent[s->val] = v;
-            push_queue(s->val);
+            if (parent[s->index] == -1)
+                parent[s->index] = v;
+            push_queue(s->index);
             s = s->next;
         }
     }
@@ -347,31 +352,141 @@ void initGraph()
     int V = NUM_VERTICES; // define number of vertices
 
     graph = createGraph(V);
-    addEdge(graph, 0, 1, 'L', 'R');
-    addEdge(graph, 1, 2, 'L', 'R');
-    addEdge(graph, 2, 3, 'S', 'S');
-    addEdge(graph, 0, 9, 'L', 'R');
-    addEdge(graph, 2, 7, 'L', 'R');
-    addEdge(graph, 3, 4, 'L', 'R');
-    addEdge(graph, 4, 5, 'L', 'R');
-    addEdge(graph, 5, 6, 'L', 'R');
-    addEdge(graph, 6, 7, 'L', 'R');
-    addEdge(graph, 7, 8, 'L', 'R');
-    addEdge(graph, 8, 9, 'L', 'R');
-    addEdge(graph, 4, 14, 'L', 'R');
-    addEdge(graph, 6, 13, 'L', 'R');
-    addEdge(graph, 8, 11, 'L', 'R');
-    addEdge(graph, 9, 10, 'L', 'R');
-    addEdge(graph, 10, 11, 'L', 'R');
-    addEdge(graph, 11, 12, 'L', 'R');
-    addEdge(graph, 12, 13, 'S', 'S');
-    addEdge(graph, 13, 14, 'L', 'R');
-    addEdge(graph, 14, 15, 'L', 'R');
-    addEdge(graph, 10, 18, 'S', 'S');
-    addEdge(graph, 12, 16, 'L', 'R');
-    addEdge(graph, 15, 16, 'L', 'R');
-    addEdge(graph, 16, 17, 'L', 'R');
-    addEdge(graph, 18, 17, 'L', 'R');
+    addEdge(graph, 0, 1, "0x8804F858", "0x8804BED0", STRAIGHT, STRAIGHT);
+    addEdge(graph, 0, 3, "0x8804F858", "0x8804BE03", RIGHT, LEFT);
+    addEdge(graph, 0, 2, "0x8804F858", "0x8804F058", LEFT, RIGHT);
+
+    addEdge(graph, 1, 5, "0x8804BED0", "0x8804D0D3", LEFT, RIGHT);
+    addEdge(graph, 1, 2, "0x8804BED0", "0x8804F058", RIGHT, LEFT);
+
+    addEdge(graph, 2, 4, "0x8804F058", "0x8804E758", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 3, 6, "0x8804BE03", "0x8804B757", RIGHT, LEFT);
+    addEdge(graph, 3, 8, "0x8804BE03", "0x8804A657", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 4, 6, "0x8804E758", "0x8804B757", LEFT, RIGHT);
+    addEdge(graph, 4, 7, "0x8804E758", "0x8804A5D3", RIGHT, LEFT);
+    addEdge(graph, 4, 9, "0x8804E758", "0x8804AE75", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 5, 10, "0x8804D0D3", "0x8804DF58", STRAIGHT, STRAIGHT);
+    addEdge(graph, 5, 7, "0x8804D0D3", "0x8804A5D3", LEFT, RIGHT);
+
+    addEdge(graph, 6, 7, "0x8804B757", "0x8804A5D3", STRAIGHT, STRAIGHT);
+    addEdge(graph, 6, 9, "0x8804B757", "0x8804AE57", LEFT, RIGHT);
+    addEdge(graph, 6, 8, "0x8804B757", "0x8804A657", RIGHT, LEFT);
+
+    addEdge(graph, 7, 10, "0x8804A5D3", "0x8804DF58", LEFT, RIGHT);
+    addEdge(graph, 7, 9, "0x8804A5D3", "0x8804AE57", RIGHT, LEFT);
+
+    addEdge(graph, 8, 11, "0x8804A657", "0x88048B57", STRAIGHT, STRAIGHT);
+    
+    addEdge(graph, 9, 12, "0x8804AE57", "0x88049E57", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 10, 20, "0x8804DF58", "0x88046556", RIGHT, LEFT);
+
+    addEdge(graph, 11, 13, "0x88048B57", "0x88049357", RIGHT, LEFT);
+    addEdge(graph, 11, 14, "0x88048B57", "0x88048357", STRAIGHT, STRAIGHT);
+    
+    addEdge(graph, 12, 13, "0x88049E57","0x88049357", LEFT, RIGHT);
+    addEdge(graph, 12, 15, "0x88049E57", "0x88047A57", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 13, 14, "0x88049357", "0x88048357", RIGHT, LEFT);
+    addEdge(graph, 13, 15, "0x88049357", "0x88047A57", LEFT, RIGHT);
+
+    addEdge(graph, 14, 17, "0x88048357", "0x88046A58", RIGHT, LEFT);
+
+    addEdge(graph, 15, 16, "0x88047A57", "0x88047257", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 16, 17, "0x88047257", "0x88046A58", LEFT, RIGHT);
+    addEdge(graph, 16, 18, "0x88047257", "0x8804C6D3", RIGHT, LEFT);
+
+    addEdge(graph, 17, 18, "0x88046A58", "0x8804C6D3", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 18, 19, "0x8804C6D3", "0x88044B56", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 19, 22, "0x88044B56", "0x88045356", RIGHT, LEFT);
+    addEdge(graph, 19, 23, "0x88044B56", "0x88044356", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 20, 21, "0x88046556", "0x88045B56", LEFT, RIGHT);
+    addEdge(graph, 20, 27, "0x88046556", "0x88046D56", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 21, 27, "0x88045B56", "0x88046D56", LEFT, RIGHT);
+    addEdge(graph, 21, 25, "0x88045B56", "0x88049DD3", RIGHT, LEFT);
+    addEdge(graph, 21, 22, "0x88045B56", "0x88045356", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 22, 25, "0x88045356", "0x88049DD3", LEFT, RIGHT);
+    addEdge(graph, 22, 23, "0x88045356", "0x88044356", RIGHT, LEFT);
+
+    addEdge(graph, 23, 24, "0x88044356", "0x880490D2", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 24, 29, "0x880490D2", "0x88047857", RIGHT, LEFT);
+    addEdge(graph, 24, 31, "0x880490D2", "0x880481D3", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 25, 26, "0x88049DD3", "0x88047556", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 26, 29, "0x88047556", "0x88047857", LEFT, RIGHT);
+    addEdge(graph, 26, 30, "0x88047556", "0x8804B6D3", RIGHT, LEFT);
+
+    addEdge(graph, 27, 28, "0x88046D56", "0x88047D56", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 28, 30, "0x88047D56", "0x8804B6D3", LEFT, RIGHT);
+    addEdge(graph, 28, 32, "0x88047D56", "0x88048157", STRAIGHT, STRAIGHT);
+    
+    addEdge(graph, 29, 30, "0x88047857", "0x8804B6D3",  STRAIGHT, STRAIGHT);
+    addEdge(graph, 29, 31, "0x88047857", "0x880481D3", RIGHT, LEFT);
+
+    addEdge(graph, 30, 32, "0x8804B6D3", "0x88048157", LEFT, RIGHT);
+
+    addEdge(graph, 31, 33, "0x880481D3", "0x8804C6D0", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 32, 41, "0x88048157", "0x8804A6D0", RIGHT, LEFT);
+    
+    addEdge(graph, 33, 34, "0x8804C6D0", "0x880489D3", STRAIGHT, STRAIGHT);
+    addEdge(graph, 33, 35, "0x8804C6D0", "0x8804D0D0", RIGHT, LEFT);
+
+    addEdge(graph, 34, 37, "0x880489D3", "0x8804A3D4", RIGHT, LEFT);
+
+    addEdge(graph, 35, 36, "0x8804D0D0", "0x880491D3", STRAIGHT, STRAIGHT);
+    
+    addEdge(graph, 36, 38, "0x880491D3", "0x8804E7D0", LEFT, RIGHT);
+    addEdge(graph, 36, 39, "0x880491D3", "0x8804A9D3", STRAIGHT, STRAIGHT); 
+
+    addEdge(graph, 37, 38, "0x8804A3D4", "0x8804E7D0", RIGHT, LEFT);
+    addEdge(graph, 37, 40, "0x8804A3D4", "0x8804A6D4", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 38, 39, "0x8804E7D0", "0x8804A9D3", LEFT, RIGHT);
+    addEdge(graph, 38, 40, "0x8804E7D0", "0x8804A6D4", RIGHT, LEFT);
+
+    addEdge(graph, 40, 43, "0x8804A6D4", "0x8804C4D4", STRAIGHT, STRAIGHT);
+
+    addEdge(graph, 41, 44, "0x8804A6D0", "0x8804ADD3", LEFT, RIGHT);
+    addEdge(graph, 41, 46, "0x8804A6D0", "0x8804B4D4", STRAIGHT, STRAIGHT);
+    
+    addEdge(graph, 42, 44, "0x8804BCD4", "0x8804ADD3", RIGHT, LEFT);
+    addEdge(graph, 42, 45, "0x8804BCD4", "0x8804D8D0", LEFT, RIGHT);
+    addEdge(graph, 42, 47, "0x8804BCD4", "0x8804E0D0",STRAIGHT, STRAIGHT);
+    
+    addEdge(graph, 43, 48, "0x8804C4D4", "0x8804CED4",STRAIGHT, STRAIGHT);
+    addEdge(graph, 43, 45, "0x8804C4D4", "0x8804D8D0", LEFT, RIGHT); 
+
+    addEdge(graph, 44, 45, "0x8804ADD3", "0x8804D8D0", STRAIGHT, STRAIGHT);
+    addEdge(graph, 44, 46, "0x8804ADD3", "0x8804B4D4", LEFT, RIGHT);
+    addEdge(graph, 44, 47, "0x8804ADD3", "0x8804E0D0", RIGHT, LEFT);
+    
+    addEdge(graph, 45, 47, "0x8804D8D0", "0x8804E0D0", LEFT, RIGHT);
+    addEdge(graph, 45, 48, "0x8804D8D0", "0x8804CED4", RIGHT, LEFT);
+
+    addEdge(graph, 46, 50, "0x8804B4D4", "0x8804D8D3", LEFT, RIGHT);
+   
+    addEdge(graph, 47, 49, "0x8804E0D0", "0x8804B6D0", STRAIGHT, STRAIGHT);
+    
+    addEdge(graph, 48, 51, "0x8804CED4",  "0x8804AED0", RIGHT, LEFT);
+
+    addEdge(graph, 49, 50, "0x8804B6D0", "0x8804D8D3", RIGHT, LEFT);
+    addEdge(graph, 49, 51, "0x8804B6D0", "0x8804AED0", LEFT, RIGHT);
+
+    addEdge(graph, 50, 51, "0x8804D8D3", "0x8804AED0", STRAIGHT, STRAIGHT);
+
 
     g_src = START_VERTEX;
     g_dest = END_VERTEX;
@@ -422,7 +537,7 @@ void getPathOut()
     while (path_out[j] != -1)
     {
         char temp[20];
-        sprintf(temp, "%d", path_out[i]);
+        sprintf(temp, "%s", graph->array[path_out[i]].head->id);
         strcat(instructions, temp);
         strcat(instructions, ",");
         strcat(instructions, getEdgeDir(path_out[i], path_out[j]));
@@ -467,6 +582,7 @@ int main(void)
     initGraph();
     //   printEdges();
     bfs(graph, NUM_VERTICES, 0, 5);
+    
     getPathOut();
 
     for (int i = 0; i < INSTRUCTIONS_SIZE; i++)

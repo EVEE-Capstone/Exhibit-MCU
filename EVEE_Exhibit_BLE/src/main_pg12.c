@@ -47,14 +47,18 @@
 #include "usart.h"
 
 #define MAX 100
-#define NUM_VERTICES 19
-#define NUM_EDGES 52
+#define NUM_VERTICES 51
+#define NUM_EDGES 174
+
 #define START_VERTEX 0
 #define END_VERTEX 9
-#define HOME 1
+
+#define HOME 0x8804B6D0
+//Need to change these to the address of the locations
 #define WORK 12
 #define OUTAGE 5
 #define SOLAR 17
+
 #define INSTRUCTIONS_SIZE 1000
 
 #define LEFT "L"
@@ -62,14 +66,15 @@
 #define STRAIGHT "S"
 #define HALT "H"
 
-void push_queue(int vertex);
+void push_queue(uint32_t vertex);
 int pop_queue();
 int isEmpty_queue();
 void initGraph();
+void rm_first_letter(char * str, char * tmp);
 
 struct Graph *createGraph(int V);
-struct AdjListNode *newAdjListNode(int val);
-struct GraphEdge *newGraphEdge(int start, int end, char * dir);
+struct AdjListNode *newAdjListNode(int index, char * id);
+struct GraphEdge *newGraphEdge(uint32_t start, uint32_t end, char * dir);
 int queue[MAX];
 int front = -1;
 int rear = -1;
@@ -80,7 +85,7 @@ struct GraphEdge *edges[NUM_EDGES];
 int g_src;
 int g_dest;
 
-void push_queue(int vertex)
+void push_queue(uint32_t vertex)
 {
   if (rear == MAX - 1)
     printf("Queue Overflow\n");
@@ -118,8 +123,8 @@ int pop_queue()
 // A structure to represent an adjacency list node
 struct AdjListNode
 {
-  int val;
-  char type[5];
+  uint32_t index;
+  char * id;
   struct AdjListNode *next;
 };
 
@@ -131,8 +136,8 @@ struct AdjList
 
 struct GraphEdge
 {
-  int start;
-  int end;
+  uint32_t start;
+  uint32_t end;
   char * dir;
 };
 
@@ -257,16 +262,17 @@ void LEUART0_IRQHandler(void)
 }
 
 // A utility function to create a new adjacency list node
-struct AdjListNode *newAdjListNode(int val)
+struct AdjListNode *newAdjListNode(int index, char * id)
 {
-  struct AdjListNode *newNode =
-      (struct AdjListNode *)malloc(sizeof(struct AdjListNode));
-  newNode->val = val;
-  newNode->next = NULL;
-  return newNode;
+    struct AdjListNode *newNode =
+        (struct AdjListNode *)malloc(sizeof(struct AdjListNode));
+    newNode->index = index;
+    newNode->id = id;
+    newNode->next = NULL;
+    return newNode;
 }
 
-struct GraphEdge *newGraphEdge(int start, int end, char * dir)
+struct GraphEdge *newGraphEdge(uint32_t start, uint32_t end, char * dir)
 {
   struct GraphEdge *newEdge =
       (struct GraphEdge *)malloc(sizeof(struct GraphEdge));
@@ -298,57 +304,56 @@ struct Graph *createGraph(int V)
 }
 
 // Adds an edge to an undirected graph
-void addEdge(struct Graph *graph, int src, int dest, char * srcType, char * destType)
+void addEdge(struct Graph *graph, int src, int dest, char * srcId, char * destId, char * srcType, char * destType)
 {
-  // Add an edge from src to dest.  A new node is
-  // added to the adjacency list of src.  The node
-  // is added at the beginning
-  struct AdjListNode *destNode = newAdjListNode(dest);
-  struct GraphEdge *destEdge = newGraphEdge(src, dest, srcType);
+    // Add an edge from src to dest.  A new node is
+    // added to the adjacency list of src.  The node
+    // is added at the beginning
+    struct AdjListNode *destNode = newAdjListNode(dest, destId);
+    struct GraphEdge *destEdge = newGraphEdge(src, dest, srcType);
 
-  for (int i = 0; i < NUM_EDGES; i++)
-  {
-    if (edges[i] == NULL)
+    for (int i = 0; i < NUM_EDGES; i++)
     {
-      edges[i] = destEdge;
-      break;
+        if (edges[i] == NULL)
+        {
+            edges[i] = destEdge;
+            break;
+        }
     }
-  }
-  destNode->next = graph->array[src].head;
-  graph->array[src].head = destNode;
-  // Since graph is undirected, add an edge from
-  // dest to src also
-  struct AdjListNode *srcNode = newAdjListNode(src);
-  struct GraphEdge *srcEdge = newGraphEdge(dest, src, destType);
-  for (int i = 0; i < NUM_EDGES; i++)
-  {
-    if (edges[i] == NULL)
+    destNode->next = graph->array[src].head;
+    graph->array[src].head = destNode;
+    // Since graph is undirected, add an edge from
+    // dest to src also
+    struct AdjListNode *srcNode = newAdjListNode(src, srcId);
+    struct GraphEdge *srcEdge = newGraphEdge(dest, src, destType);
+    for (int i = 0; i < NUM_EDGES; i++)
     {
-      edges[i] = srcEdge;
-      break;
+        if (edges[i] == NULL)
+        {
+            edges[i] = srcEdge;
+            break;
+        }
     }
-  }
-  srcNode->next = graph->array[dest].head;
-  graph->array[dest].head = srcNode;
+    srcNode->next = graph->array[dest].head;
+    graph->array[dest].head = srcNode;
 }
 // A utility function to print the adjacency list
 // representation of graph
 void printGraph(struct Graph *graph)
 {
-  int v;
+    int v;
 
-  for (v = 0; v < graph->V; v++)
-  {
-    struct AdjListNode *pCrawl = graph->array[v].head;
-    printf("\n Adjacency list of vertex %d\n %d (%s) ", v, v, pCrawl->type);
-    while (pCrawl)
+    for (v = 0; v < graph->V; v++)
     {
-      printf("-> %d", pCrawl->val);
-      printf("-> %s", pCrawl->type);
-      pCrawl = pCrawl->next;
+        struct AdjListNode *pCrawl = graph->array[v].head;
+        printf("\n Adjacency list of vertex %d\n %d", v, v);
+        while (pCrawl)
+        {
+            printf("-> %ld", pCrawl->index);
+            pCrawl = pCrawl->next;
+        }
+        printf("\n");
     }
-    printf("\n");
-  }
 }
 
 void printEdges()
@@ -357,106 +362,106 @@ void printEdges()
   {
     if (edges[v] != NULL)
     {
-      printf("edge %d to %d, %s\n", edges[v]->start, edges[v]->end, edges[v]->dir);
+      printf("edge %d to %d, %s\n", (int)edges[v]->start, (int)edges[v]->end, edges[v]->dir);
     }
   }
 }
 
 void bfs(struct Graph *graph, int V, int start, int end)
 {
-  memset(txBuffer, 0, 80);
-  if (start < 0 || end < 0 || start > V - 1 || end > V - 1)
-  {
-    printf("Invalid start and end inputs.\n");
-    return;
-  }
-  int v = start;
-  int parent[V];
-  int visited[V];
-  int path[V];
-  int length = 0;
-  for (int j = 0; j < V; j++)
-  {
-    parent[j] = -1;
-    path[j] = -1;
-    visited[j] = 0;
-  }
-  // clear global path output variable
-  for (int i = 0; i < NUM_VERTICES; i++)
-  {
-    path_out[i] = -1;
-  }
-  push_queue(v);
-
-  while (!isEmpty_queue())
-  {
-    v = pop_queue();
-    if (visited[v] == 1) // check if visited
-      continue;
-    visited[v] = 1; // if not, mark vertex as visited
-
-    struct AdjListNode *s = graph->array[v].head; // get adjacency list of vertex
-
-    // if end, backtrace and print path
-
-    if (v == end)
+    memset(txBuffer, 0, 80);
+    if (start < 0 || end < 0 || start > V - 1 || end > V - 1)
     {
-      int x = end;
-      // build path by backtracing the parent
-      for (int i = 0; i < V; i++)
-      {
-        if (x == start)
-          break;
-        path[i] = x;
-        x = parent[x];
-      }
-      for (int j = 0; j < V; j++)
-      {
-        if (path[j] != -1)
+        printf("Invalid start and end inputs.\n");
+        return;
+    }
+    int v = start;
+    int parent[V];
+    int visited[V];
+    int path[V];
+    int length = 0;
+    for (int j = 0; j < V; j++)
+    {
+        parent[j] = -1;
+        path[j] = -1;
+        visited[j] = 0;
+    }
+    // clear global path output variable
+    for (int i = 0; i < NUM_VERTICES; i++)
+    {
+        path_out[i] = -1;
+    }
+    push_queue(v);
+
+    while (!isEmpty_queue())
+    {
+        v = pop_queue();
+        if (visited[v] == 1) // check if visited
+            continue;
+        visited[v] = 1; // if not, mark vertex as visited
+
+        struct AdjListNode *s = graph->array[v].head; // get adjacency list of vertex
+
+        // if end, backtrace and print path
+
+        if (v == end)
         {
-          length++;
+            int x = end;
+            // build path by backtracing the parent
+            for (int i = 0; i < V; i++)
+            {
+                if (x == start)
+                    break;
+                path[i] = x;
+                x = parent[x];
+            }
+            for (int j = 0; j < V; j++)
+            {
+                if (path[j] != -1)
+                {
+                    length++;
+                }
+            }
+
+            for (int i = 0; i < length + 1; i++)
+            {
+                if (i == 0)
+                { // set first value to start
+                    path_out[0] = start;
+                    // printf("Path from vertex %d to %d: ", start, end);
+                    // printf("%d -> ", start);
+                    continue;
+                }
+
+                path_out[i] = path[length - i];
+                // if(path_out[i] == end){
+                //     printf("%d\n", path_out[i]);
+                // }
+                // else{
+                //     printf("%d -> ", path_out[i]);
+                // }
+            }
+            // clear the queue
+            while (!isEmpty_queue())
+            {
+                pop_queue();
+            }
+            front = -1;
+            rear = -1;
+
+            break;
         }
-      }
 
-      for (int i = 0; i < length + 1; i++)
-      {
-        if (i == 0)
-        { // set first value to start
-          path_out[0] = start;
-          // printf("Path from vertex %d to %d: ", start, end);
-          // printf("%d -> ", start);
-          continue;
+        // else, go through adjacency list and push to queue
+
+        while (s)
+        {
+            if (parent[s->index] == -1)
+                parent[s->index] = v;
+            push_queue(s->index);
+            s = s->next;
         }
-
-        path_out[i] = path[length - i];
-        // if(path_out[i] == end){
-        //     printf("%d\n", path_out[i]);
-        // }
-        // else{
-        //     printf("%d -> ", path_out[i]);
-        // }
-      }
-      // clear the queue
-      while (!isEmpty_queue())
-      {
-        pop_queue();
-      }
-      front = -1;
-      rear = -1;
-
-      break;
     }
-
-    // else, go through adjacency list and push to queue
-
-    while (s)
-    {
-      if (parent[s->val] == -1)
-        parent[s->val] = v;
-      push_queue(s->val);
-      s = s->next;
-    }
-  }
 }
 
 // Driver program to test above functions
@@ -466,31 +471,142 @@ void initGraph()
   int V = NUM_VERTICES; // define number of vertices
 
   graph = createGraph(V);
-  addEdge(graph, 0, 1, LEFT, RIGHT);
-  addEdge(graph, 1, 2, LEFT, RIGHT);
-  addEdge(graph, 2, 3, STRAIGHT, STRAIGHT);
-  addEdge(graph, 0, 9, LEFT, RIGHT);
-  addEdge(graph, 2, 7, LEFT, RIGHT);
-  addEdge(graph, 3, 4, LEFT, RIGHT);
-  addEdge(graph, 4, 5, LEFT, RIGHT);
-  addEdge(graph, 5, 6, LEFT, RIGHT);
-  addEdge(graph, 6, 7, LEFT, RIGHT);
-  addEdge(graph, 7, 8, LEFT, RIGHT);
-  addEdge(graph, 8, 9, LEFT, RIGHT);
-  addEdge(graph, 4, 14, LEFT, RIGHT);
-  addEdge(graph, 6, 13, LEFT, RIGHT);
-  addEdge(graph, 8, 11, LEFT, RIGHT);
-  addEdge(graph, 9, 10, LEFT, RIGHT);
-  addEdge(graph, 10, 11, LEFT, RIGHT);
-  addEdge(graph, 11, 12, LEFT, RIGHT);
-  addEdge(graph, 12, 13, STRAIGHT, STRAIGHT);
-  addEdge(graph, 13, 14, LEFT, RIGHT);
-  addEdge(graph, 14, 15, LEFT, RIGHT);
-  addEdge(graph, 10, 18, STRAIGHT, STRAIGHT);
-  addEdge(graph, 12, 16, LEFT, RIGHT);
-  addEdge(graph, 15, 16, LEFT, RIGHT);
-  addEdge(graph, 16, 17, LEFT, RIGHT);
-  addEdge(graph, 18, 17, LEFT, RIGHT);
+  graph = createGraph(V);
+  addEdge(graph, 0, 1, "0x8804F858", "0x8804BED0", STRAIGHT, STRAIGHT);
+  addEdge(graph, 0, 3, "0x8804F858", "0x8804BE03", RIGHT, LEFT);
+  addEdge(graph, 0, 2, "0x8804F858", "0x8804F058", LEFT, RIGHT);
+
+  addEdge(graph, 1, 5, "0x8804BED0", "0x8804D0D3", LEFT, RIGHT);
+  addEdge(graph, 1, 2, "0x8804BED0", "0x8804F058", RIGHT, LEFT);
+
+  addEdge(graph, 2, 4, "0x8804F058", "0x8804E758", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 3, 6, "0x8804BE03", "0x8804B757", RIGHT, LEFT);
+  addEdge(graph, 3, 8, "0x8804BE03", "0x8804A657", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 4, 6, "0x8804E758", "0x8804B757", LEFT, RIGHT);
+  addEdge(graph, 4, 7, "0x8804E758", "0x8804A5D3", RIGHT, LEFT);
+  addEdge(graph, 4, 9, "0x8804E758", "0x8804AE75", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 5, 10, "0x8804D0D3", "0x8804DF58", STRAIGHT, STRAIGHT);
+  addEdge(graph, 5, 7, "0x8804D0D3", "0x8804A5D3", LEFT, RIGHT);
+
+  addEdge(graph, 6, 7, "0x8804B757", "0x8804A5D3", STRAIGHT, STRAIGHT);
+  addEdge(graph, 6, 9, "0x8804B757", "0x8804AE57", LEFT, RIGHT);
+  addEdge(graph, 6, 8, "0x8804B757", "0x8804A657", RIGHT, LEFT);
+
+  addEdge(graph, 7, 10, "0x8804A5D3", "0x8804DF58", LEFT, RIGHT);
+  addEdge(graph, 7, 9, "0x8804A5D3", "0x8804AE57", RIGHT, LEFT);
+
+  addEdge(graph, 8, 11, "0x8804A657", "0x88048B57", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 9, 12, "0x8804AE57", "0x88049E57", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 10, 20, "0x8804DF58", "0x88046556", RIGHT, LEFT);
+
+  addEdge(graph, 11, 13, "0x88048B57", "0x88049357", RIGHT, LEFT);
+  addEdge(graph, 11, 14, "0x88048B57", "0x88048357", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 12, 13, "0x88049E57","0x88049357", LEFT, RIGHT);
+  addEdge(graph, 12, 15, "0x88049E57", "0x88047A57", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 13, 14, "0x88049357", "0x88048357", RIGHT, LEFT);
+  addEdge(graph, 13, 15, "0x88049357", "0x88047A57", LEFT, RIGHT);
+
+  addEdge(graph, 14, 17, "0x88048357", "0x88046A58", RIGHT, LEFT);
+
+  addEdge(graph, 15, 16, "0x88047A57", "0x88047257", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 16, 17, "0x88047257", "0x88046A58", LEFT, RIGHT);
+  addEdge(graph, 16, 18, "0x88047257", "0x8804C6D3", RIGHT, LEFT);
+
+  addEdge(graph, 17, 18, "0x88046A58", "0x8804C6D3", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 18, 19, "0x8804C6D3", "0x88044B56", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 19, 22, "0x88044B56", "0x88045356", RIGHT, LEFT);
+  addEdge(graph, 19, 23, "0x88044B56", "0x88044356", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 20, 21, "0x88046556", "0x88045B56", LEFT, RIGHT);
+  addEdge(graph, 20, 27, "0x88046556", "0x88046D56", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 21, 27, "0x88045B56", "0x88046D56", LEFT, RIGHT);
+  addEdge(graph, 21, 25, "0x88045B56", "0x88049DD3", RIGHT, LEFT);
+  addEdge(graph, 21, 22, "0x88045B56", "0x88045356", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 22, 25, "0x88045356", "0x88049DD3", LEFT, RIGHT);
+  addEdge(graph, 22, 23, "0x88045356", "0x88044356", RIGHT, LEFT);
+
+  addEdge(graph, 23, 24, "0x88044356", "0x880490D2", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 24, 29, "0x880490D2", "0x88047857", RIGHT, LEFT);
+  addEdge(graph, 24, 31, "0x880490D2", "0x880481D3", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 25, 26, "0x88049DD3", "0x88047556", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 26, 29, "0x88047556", "0x88047857", LEFT, RIGHT);
+  addEdge(graph, 26, 30, "0x88047556", "0x8804B6D3", RIGHT, LEFT);
+
+  addEdge(graph, 27, 28, "0x88046D56", "0x88047D56", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 28, 30, "0x88047D56", "0x8804B6D3", LEFT, RIGHT);
+  addEdge(graph, 28, 32, "0x88047D56", "0x88048157", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 29, 30, "0x88047857", "0x8804B6D3",  STRAIGHT, STRAIGHT);
+  addEdge(graph, 29, 31, "0x88047857", "0x880481D3", RIGHT, LEFT);
+
+  addEdge(graph, 30, 32, "0x8804B6D3", "0x88048157", LEFT, RIGHT);
+
+  addEdge(graph, 31, 33, "0x880481D3", "0x8804C6D0", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 32, 41, "0x88048157", "0x8804A6D0", RIGHT, LEFT);
+
+  addEdge(graph, 33, 34, "0x8804C6D0", "0x880489D3", STRAIGHT, STRAIGHT);
+  addEdge(graph, 33, 35, "0x8804C6D0", "0x8804D0D0", RIGHT, LEFT);
+
+  addEdge(graph, 34, 37, "0x880489D3", "0x8804A3D4", RIGHT, LEFT);
+
+  addEdge(graph, 35, 36, "0x8804D0D0", "0x880491D3", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 36, 38, "0x880491D3", "0x8804E7D0", LEFT, RIGHT);
+  addEdge(graph, 36, 39, "0x880491D3", "0x8804A9D3", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 37, 38, "0x8804A3D4", "0x8804E7D0", RIGHT, LEFT);
+  addEdge(graph, 37, 40, "0x8804A3D4", "0x8804A6D4", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 38, 39, "0x8804E7D0", "0x8804A9D3", LEFT, RIGHT);
+  addEdge(graph, 38, 40, "0x8804E7D0", "0x8804A6D4", RIGHT, LEFT);
+
+  addEdge(graph, 40, 43, "0x8804A6D4", "0x8804C4D4", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 41, 44, "0x8804A6D0", "0x8804ADD3", LEFT, RIGHT);
+  addEdge(graph, 41, 46, "0x8804A6D0", "0x8804B4D4", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 42, 44, "0x8804BCD4", "0x8804ADD3", RIGHT, LEFT);
+  addEdge(graph, 42, 45, "0x8804BCD4", "0x8804D8D0", LEFT, RIGHT);
+  addEdge(graph, 42, 47, "0x8804BCD4", "0x8804E0D0",STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 43, 48, "0x8804C4D4", "0x8804CED4",STRAIGHT, STRAIGHT);
+  addEdge(graph, 43, 45, "0x8804C4D4", "0x8804D8D0", LEFT, RIGHT);
+
+  addEdge(graph, 44, 45, "0x8804ADD3", "0x8804D8D0", STRAIGHT, STRAIGHT);
+  addEdge(graph, 44, 46, "0x8804ADD3", "0x8804B4D4", LEFT, RIGHT);
+  addEdge(graph, 44, 47, "0x8804ADD3", "0x8804E0D0", RIGHT, LEFT);
+
+  addEdge(graph, 45, 47, "0x8804D8D0", "0x8804E0D0", LEFT, RIGHT);
+  addEdge(graph, 45, 48, "0x8804D8D0", "0x8804CED4", RIGHT, LEFT);
+
+  addEdge(graph, 46, 50, "0x8804B4D4", "0x8804D8D3", LEFT, RIGHT);
+
+  addEdge(graph, 47, 49, "0x8804E0D0", "0x8804B6D0", STRAIGHT, STRAIGHT);
+
+  addEdge(graph, 48, 51, "0x8804CED4",  "0x8804AED0", RIGHT, LEFT);
+
+  addEdge(graph, 49, 50, "0x8804B6D0", "0x8804D8D3", RIGHT, LEFT);
+  addEdge(graph, 49, 51, "0x8804B6D0", "0x8804AED0", LEFT, RIGHT);
+
+  addEdge(graph, 50, 51, "0x8804D8D3", "0x8804AED0", STRAIGHT, STRAIGHT);
+
   g_src = START_VERTEX;
   g_dest = END_VERTEX;
 }
@@ -540,14 +656,14 @@ void getPathOut()
 
   while (path_out[j] != -1)
   {
-    char temp[20];
-    sprintf(temp, "%d", path_out[i]);
-    strcat(instructions, temp);
-    strcat(instructions, ",");
-    strcat(instructions, getEdgeDir(path_out[i], path_out[j]));
-    strcat(instructions, ",");
-    i++;
-    j++;
+      char temp[20];
+      sprintf(temp, "%s", graph->array[path_out[i]].head->id);
+      strcat(instructions, temp);
+      strcat(instructions, ",");
+      strcat(instructions, getEdgeDir(path_out[i], path_out[j]));
+      strcat(instructions, ",");
+      i++;
+      j++;
   }
   char end[20];
   sprintf(end, "%d", g_dest);
@@ -577,6 +693,12 @@ void writeToPWA(char * data)
   txBuffer[i] = '\0';
   LEUART_IntEnable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Re-enable interrupts
   LEUART_IntSet(LEUART0, LEUART_IFS_TXC);
+}
+
+void rm_first_letter(char * str, char * tmp){
+  for(int i = 0; i < strlen(str); i++){
+      tmp[i] = str[i + 1];
+  }
 }
 
 void clearInstructions()
@@ -617,8 +739,15 @@ int main(void){
   ble_usart_open();
 
   char str[20];
+  char tmp[20];
+
+  g_dest = HOME;
+
+  // int battery;
+  uint32_t id;
 
   LEUART_IntSet(LEUART0, LEUART_IFS_TXC);
+
 
   while (1)
   {
@@ -628,6 +757,9 @@ int main(void){
     {
       LEUART_IntDisable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Disable interrupts
 
+
+//--------------------Comms between model and PWA ---------------------------------------
+      // DIVIDER only do this depending on case
       clearInstructions();
 
       getStartVertex(); // set source
@@ -637,7 +769,8 @@ int main(void){
       getPathOut();
 
       ble_write(instructions); // send to car
-
+      //DIVIDER end
+//-----------------------------------------------------------------------------------------------------------
 
       rxDataReady = 0;  // Indicate that we need new data
 
@@ -646,12 +779,66 @@ int main(void){
     }
 
     // Test reads with usart BLE
+
+    // This will be handling communication coming from Car
     if (ble_newData())   // received from car
     {
       ble_read(str); // uses strcpy, assumes communication is chars/strings
 
-      writeToPWA(str);
+
+
+//--------------------Comms between model and car ---------------------------------------
+      // get battery
+      if(str[0] == 'b' && strlen(str) > 2){
+          rm_first_letter(str, tmp);
+          //battery = atoi(tmp);
+          writeToPWA(str);
+      }
+
+      // check if lost
+      if(str[0] == 'r' && strlen(str) > 2){
+          rm_first_letter(str, tmp);
+          id = atoi(tmp);
+          // check that the id is valid
+          if((id & (0x8804 << 16)) == (0x8804 << 16)){
+              // recalculate based on id
+               g_src = id;
+               bfs(graph, NUM_VERTICES, g_src, g_dest);
+               getPathOut();
+               ble_write(instructions); // send to car
+          }
+       }
+
+      // check low battery
+      if(str[0] == 'L' && str[1] == 'B'){
+          // set destination to charger
+          // car clears its path and will then go through lost protocol
+          g_dest = SOLAR;
+      }
+
+      // Check if arrived
+      if(str[0] == 'A' && str[1] == 'V'){
+          //Send the PWA character A to change screen and reactivate buttons so that the user can choose what they want to do at location
+          writeToPWA("a");
+      }
+
+      // Timeout
+      if(str[0] == 'T' && str[1] == 'O'){
+          //This means that the car has not hit an NFC tag in 4 seconds
+          //Car turns off motors and flashes the error LED
+          writeToPWA("e"); //Send the error command to the PWA
+          g_dest = HOME; //Set the g_dest to home so that we see something similar to the initialization state
+      }
+
+      //Car has finished charging
+      if(str[0] == 'S' && str[1] == 'C'){
+          //This means that the car has finished charging itself
+          writeToPWA("d"); //Send command to tell PWA that charging is done and buttons can be reactivated
+          //Car should then be sent a new path based on the input from the user
+      }
     }
+//-----------------------------------------------------------------------------------------------------------
+
 
     // lowest energy mode we can enter is EM1 due to USART
     EMU_EnterEM1();
