@@ -135,7 +135,7 @@ void usart_open(USART_TypeDef *usart, USART_OPEN_STRUCT *usart_setup){
 
 
   // for testing only
-  usart->CTRL |= USART_CTRL_LOOPBK;
+//  usart->CTRL |= USART_CTRL_LOOPBK;
 
   usart->CMD = USART_CMD_CLEARTX | USART_CMD_CLEARRX;
 
@@ -383,9 +383,8 @@ void txc_recevied(USART_STATE_MACHINE_STRUCT *sm){
  *
  ******************************************************************************/
 void rxdatav_recevied(USART_STATE_MACHINE_STRUCT *sm){
-  CORE_DECLARE_IRQ_STATE;
-  CORE_ENTER_CRITICAL();
-  uint32_t rx;
+
+    uint32_t rx;
     rx = sm->usart->RXDATA;
 
     switch(sm->curr_state){
@@ -412,7 +411,7 @@ void rxdatav_recevied(USART_STATE_MACHINE_STRUCT *sm){
       EFM_ASSERT(false);
       break;
     }
-  CORE_EXIT_CRITICAL();
+
 }
 
 /***************************************************************************//**

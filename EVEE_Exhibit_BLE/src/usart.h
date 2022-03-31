@@ -48,7 +48,7 @@ typedef enum{
 typedef struct {
   HM10_UART_STATES    curr_state;
   USART_TypeDef        *usart;
-  char                  string[80];
+  char                  string[200];
   uint32_t              string_len;
   uint32_t              counter;
   uint32_t              rxdataValid;

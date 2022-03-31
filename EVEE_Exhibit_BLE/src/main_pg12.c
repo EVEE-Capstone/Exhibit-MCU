@@ -46,9 +46,9 @@
 
 #include "usart.h"
 
-#define MAX 100
-#define NUM_VERTICES 51
-#define NUM_EDGES 174
+#define MAX 10000
+#define NUM_VERTICES 54 // 52
+#define NUM_EDGES 178   // 174
 
 #define START_VERTEX 0
 #define END_VERTEX 9
@@ -71,10 +71,13 @@ int pop_queue();
 int isEmpty_queue();
 void initGraph();
 void rm_first_letter(char * str, char * tmp);
+void test_path(void);
+void clearInstructions(void);
 
 struct Graph *createGraph(int V);
-struct AdjListNode *newAdjListNode(int index, char * id);
+struct AdjListNode *newAdjListNode(int index, uint32_t id);
 struct GraphEdge *newGraphEdge(uint32_t start, uint32_t end, char * dir);
+int get_id_index(uint32_t);
 int queue[MAX];
 int front = -1;
 int rear = -1;
@@ -82,8 +85,10 @@ int path_out[NUM_VERTICES];
 char instructions[INSTRUCTIONS_SIZE];
 struct Graph *graph;
 struct GraphEdge *edges[NUM_EDGES];
-int g_src;
-int g_dest;
+uint32_t g_src;
+uint32_t g_dest;
+
+uint32_t tags[NUM_VERTICES];
 
 void push_queue(uint32_t vertex)
 {
@@ -124,7 +129,7 @@ int pop_queue()
 struct AdjListNode
 {
   uint32_t index;
-  char * id;
+  uint32_t id;
   struct AdjListNode *next;
 };
 
@@ -262,7 +267,7 @@ void LEUART0_IRQHandler(void)
 }
 
 // A utility function to create a new adjacency list node
-struct AdjListNode *newAdjListNode(int index, char * id)
+struct AdjListNode *newAdjListNode(int index, uint32_t id)
 {
     struct AdjListNode *newNode =
         (struct AdjListNode *)malloc(sizeof(struct AdjListNode));
@@ -304,12 +309,12 @@ struct Graph *createGraph(int V)
 }
 
 // Adds an edge to an undirected graph
-void addEdge(struct Graph *graph, int src, int dest, char * srcId, char * destId, char * srcType, char * destType)
+void addEdge(struct Graph *graph, int src, int dest, char * srcType, char * destType)
 {
     // Add an edge from src to dest.  A new node is
     // added to the adjacency list of src.  The node
     // is added at the beginning
-    struct AdjListNode *destNode = newAdjListNode(dest, destId);
+    struct AdjListNode *destNode = newAdjListNode(dest, tags[dest]);
     struct GraphEdge *destEdge = newGraphEdge(src, dest, srcType);
 
     for (int i = 0; i < NUM_EDGES; i++)
@@ -324,7 +329,7 @@ void addEdge(struct Graph *graph, int src, int dest, char * srcId, char * destId
     graph->array[src].head = destNode;
     // Since graph is undirected, add an edge from
     // dest to src also
-    struct AdjListNode *srcNode = newAdjListNode(src, srcId);
+    struct AdjListNode *srcNode = newAdjListNode(src, tags[src]);
     struct GraphEdge *srcEdge = newGraphEdge(dest, src, destType);
     for (int i = 0; i < NUM_EDGES; i++)
     {
@@ -367,9 +372,11 @@ void printEdges()
   }
 }
 
-void bfs(struct Graph *graph, int V, int start, int end)
+void bfs(struct Graph *graph, int V, int startID, int endID)
 {
     memset(txBuffer, 0, 80);
+    int start = get_id_index(startID);
+    int end = get_id_index(endID);
     if (start < 0 || end < 0 || start > V - 1 || end > V - 1)
     {
         printf("Invalid start and end inputs.\n");
@@ -464,6 +471,72 @@ void bfs(struct Graph *graph, int V, int start, int end)
     }
 }
 
+void initArray(void){
+  tags[0] = 0x8804F858;
+  tags[1] = 0x8804BED0;
+  tags[2] = 0x8804F058;
+  tags[3] = 0x8804BE03;
+  tags[4] = 0x8804E758;
+  tags[5] = 0x8804D0D3;
+  tags[6] = 0x8804B757;
+  tags[7] = 0x8804A5D3;
+  tags[8] = 0x8804A657;
+  tags[9] = 0x8804AE75;
+  tags[10] = 0x8804DF58;
+  tags[11] = 0x88048B57;
+  tags[12] = 0x88049E57;
+  tags[13] = 0x88049357;
+  tags[14] = 0x88048357;
+  tags[15] = 0x88047A57;
+  tags[16] = 0x88047257;
+  tags[17] = 0x88046A58;
+  tags[18] = 0x8804C6D3;
+  tags[19] = 0x88044B56;
+  tags[20] = 0x88046556;
+  tags[21] = 0x88045B56;
+  tags[22] = 0x88045356;
+  tags[23] = 0x88044356;
+  tags[24] = 0x880490D2;
+  tags[25] = 0x88049DD3;
+  tags[26] = 0x88047556;
+  tags[27] = 0x88046D56;
+  tags[28] = 0x88047D56;
+  tags[29] = 0x88047857;
+  tags[30] = 0x8804B6D3;
+  tags[31] = 0x880481D3;
+  tags[32] = 0x88048157;
+  tags[33] = 0x8804C6D0;
+  tags[34] = 0x880489D3;
+  tags[35] = 0x8804D0D0;
+  tags[36] = 0x880491D3;
+  tags[37] = 0x8804A3D4;
+  tags[38] = 0x8804E7D0;
+  tags[39] = 0x8804A9D3;
+  tags[40] = 0x8804A6D4;
+  tags[41] = 0x8804A6D0;
+  tags[42] = 0x8804BCD4;
+  tags[43] = 0x8804C4D4;
+  tags[44] = 0x8804ADD3;
+  tags[45] = 0x8804D8D0;
+  tags[46] = 0x8804B4D4;
+  tags[47] = 0x8804E0D0;
+  tags[48] = 0x8804CED4;
+  tags[49] = 0x8804B6D0;
+  tags[50] = 0x8804D8D3;
+  tags[51] = 0x8804AED0;
+  // testing only
+  tags[52] = 0x88049CD1;
+  tags[53] = 0x8804AC58;
+}
+
+int get_id_index(uint32_t id){
+  for(int i = 0; i < NUM_VERTICES; i++){
+      if(id == tags[i])
+        return i;
+  }
+  return -1;
+}
+
 // Driver program to test above functions
 void initGraph()
 {
@@ -471,141 +544,144 @@ void initGraph()
   int V = NUM_VERTICES; // define number of vertices
 
   graph = createGraph(V);
-  graph = createGraph(V);
-  addEdge(graph, 0, 1, "0x8804F858", "0x8804BED0", STRAIGHT, STRAIGHT);
-  addEdge(graph, 0, 3, "0x8804F858", "0x8804BE03", RIGHT, LEFT);
-  addEdge(graph, 0, 2, "0x8804F858", "0x8804F058", LEFT, RIGHT);
+  addEdge(graph, 0, 1, STRAIGHT, STRAIGHT);
+  addEdge(graph, 0, 3, RIGHT, LEFT);
+  addEdge(graph, 0, 2, LEFT, RIGHT);
 
-  addEdge(graph, 1, 5, "0x8804BED0", "0x8804D0D3", LEFT, RIGHT);
-  addEdge(graph, 1, 2, "0x8804BED0", "0x8804F058", RIGHT, LEFT);
+  addEdge(graph, 1, 5, LEFT, RIGHT);
+  addEdge(graph, 1, 2, RIGHT, LEFT);
 
-  addEdge(graph, 2, 4, "0x8804F058", "0x8804E758", STRAIGHT, STRAIGHT);
+  addEdge(graph, 2, 4, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 3, 6, "0x8804BE03", "0x8804B757", RIGHT, LEFT);
-  addEdge(graph, 3, 8, "0x8804BE03", "0x8804A657", STRAIGHT, STRAIGHT);
+  addEdge(graph, 3, 6, RIGHT, LEFT);
+  addEdge(graph, 3, 8, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 4, 6, "0x8804E758", "0x8804B757", LEFT, RIGHT);
-  addEdge(graph, 4, 7, "0x8804E758", "0x8804A5D3", RIGHT, LEFT);
-  addEdge(graph, 4, 9, "0x8804E758", "0x8804AE75", STRAIGHT, STRAIGHT);
+  addEdge(graph, 4, 6, LEFT, RIGHT);
+  addEdge(graph, 4, 7, RIGHT, LEFT);
+  addEdge(graph, 4, 9, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 5, 10, "0x8804D0D3", "0x8804DF58", STRAIGHT, STRAIGHT);
-  addEdge(graph, 5, 7, "0x8804D0D3", "0x8804A5D3", LEFT, RIGHT);
+  addEdge(graph, 5, 10, STRAIGHT, STRAIGHT);
+  addEdge(graph, 5, 7, LEFT, RIGHT);
 
-  addEdge(graph, 6, 7, "0x8804B757", "0x8804A5D3", STRAIGHT, STRAIGHT);
-  addEdge(graph, 6, 9, "0x8804B757", "0x8804AE57", LEFT, RIGHT);
-  addEdge(graph, 6, 8, "0x8804B757", "0x8804A657", RIGHT, LEFT);
+  addEdge(graph, 6, 7, STRAIGHT, STRAIGHT);
+  addEdge(graph, 6, 9, LEFT, RIGHT);
+  addEdge(graph, 6, 8, RIGHT, LEFT);
 
-  addEdge(graph, 7, 10, "0x8804A5D3", "0x8804DF58", LEFT, RIGHT);
-  addEdge(graph, 7, 9, "0x8804A5D3", "0x8804AE57", RIGHT, LEFT);
+  addEdge(graph, 7, 10, LEFT, RIGHT);
+  addEdge(graph, 7, 9, RIGHT, LEFT);
 
-  addEdge(graph, 8, 11, "0x8804A657", "0x88048B57", STRAIGHT, STRAIGHT);
+  addEdge(graph, 8, 11, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 9, 12, "0x8804AE57", "0x88049E57", STRAIGHT, STRAIGHT);
+  addEdge(graph, 9, 12, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 10, 20, "0x8804DF58", "0x88046556", RIGHT, LEFT);
+  addEdge(graph, 10, 20, RIGHT, LEFT);
 
-  addEdge(graph, 11, 13, "0x88048B57", "0x88049357", RIGHT, LEFT);
-  addEdge(graph, 11, 14, "0x88048B57", "0x88048357", STRAIGHT, STRAIGHT);
+  addEdge(graph, 11, 13, RIGHT, LEFT);
+  addEdge(graph, 11, 14, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 12, 13, "0x88049E57","0x88049357", LEFT, RIGHT);
-  addEdge(graph, 12, 15, "0x88049E57", "0x88047A57", STRAIGHT, STRAIGHT);
+  addEdge(graph, 12, 13, LEFT, RIGHT);
+  addEdge(graph, 12, 15, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 13, 14, "0x88049357", "0x88048357", RIGHT, LEFT);
-  addEdge(graph, 13, 15, "0x88049357", "0x88047A57", LEFT, RIGHT);
+  addEdge(graph, 13, 14, RIGHT, LEFT);
+  addEdge(graph, 13, 15, LEFT, RIGHT);
 
-  addEdge(graph, 14, 17, "0x88048357", "0x88046A58", RIGHT, LEFT);
+  addEdge(graph, 14, 17, RIGHT, LEFT);
 
-  addEdge(graph, 15, 16, "0x88047A57", "0x88047257", STRAIGHT, STRAIGHT);
+  addEdge(graph, 15, 16, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 16, 17, "0x88047257", "0x88046A58", LEFT, RIGHT);
-  addEdge(graph, 16, 18, "0x88047257", "0x8804C6D3", RIGHT, LEFT);
+  addEdge(graph, 16, 17, LEFT, RIGHT);
+  addEdge(graph, 16, 18, RIGHT, LEFT);
 
-  addEdge(graph, 17, 18, "0x88046A58", "0x8804C6D3", STRAIGHT, STRAIGHT);
+  addEdge(graph, 17, 18, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 18, 19, "0x8804C6D3", "0x88044B56", STRAIGHT, STRAIGHT);
+  addEdge(graph, 18, 19, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 19, 22, "0x88044B56", "0x88045356", RIGHT, LEFT);
-  addEdge(graph, 19, 23, "0x88044B56", "0x88044356", STRAIGHT, STRAIGHT);
+  addEdge(graph, 19, 22, RIGHT, LEFT);
+  addEdge(graph, 19, 23, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 20, 21, "0x88046556", "0x88045B56", LEFT, RIGHT);
-  addEdge(graph, 20, 27, "0x88046556", "0x88046D56", STRAIGHT, STRAIGHT);
+  addEdge(graph, 20, 21, LEFT, RIGHT);
+  addEdge(graph, 20, 27, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 21, 27, "0x88045B56", "0x88046D56", LEFT, RIGHT);
-  addEdge(graph, 21, 25, "0x88045B56", "0x88049DD3", RIGHT, LEFT);
-  addEdge(graph, 21, 22, "0x88045B56", "0x88045356", STRAIGHT, STRAIGHT);
+  addEdge(graph, 21, 27, LEFT, RIGHT);
+  addEdge(graph, 21, 25, RIGHT, LEFT);
+  addEdge(graph, 21, 22, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 22, 25, "0x88045356", "0x88049DD3", LEFT, RIGHT);
-  addEdge(graph, 22, 23, "0x88045356", "0x88044356", RIGHT, LEFT);
+  addEdge(graph, 22, 25, LEFT, RIGHT);
+  addEdge(graph, 22, 23, RIGHT, LEFT);
 
-  addEdge(graph, 23, 24, "0x88044356", "0x880490D2", STRAIGHT, STRAIGHT);
+  addEdge(graph, 23, 24, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 24, 29, "0x880490D2", "0x88047857", RIGHT, LEFT);
-  addEdge(graph, 24, 31, "0x880490D2", "0x880481D3", STRAIGHT, STRAIGHT);
+  addEdge(graph, 24, 29, RIGHT, LEFT);
+  addEdge(graph, 24, 31, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 25, 26, "0x88049DD3", "0x88047556", STRAIGHT, STRAIGHT);
+  addEdge(graph, 25, 26, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 26, 29, "0x88047556", "0x88047857", LEFT, RIGHT);
-  addEdge(graph, 26, 30, "0x88047556", "0x8804B6D3", RIGHT, LEFT);
+  addEdge(graph, 26, 29, LEFT, RIGHT);
+  addEdge(graph, 26, 30, RIGHT, LEFT);
 
-  addEdge(graph, 27, 28, "0x88046D56", "0x88047D56", STRAIGHT, STRAIGHT);
+  addEdge(graph, 27, 28, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 28, 30, "0x88047D56", "0x8804B6D3", LEFT, RIGHT);
-  addEdge(graph, 28, 32, "0x88047D56", "0x88048157", STRAIGHT, STRAIGHT);
+  addEdge(graph, 28, 30, LEFT, RIGHT);
+  addEdge(graph, 28, 32, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 29, 30, "0x88047857", "0x8804B6D3",  STRAIGHT, STRAIGHT);
-  addEdge(graph, 29, 31, "0x88047857", "0x880481D3", RIGHT, LEFT);
+  addEdge(graph, 29, 30, STRAIGHT, STRAIGHT);
+  addEdge(graph, 29, 31, RIGHT, LEFT);
 
-  addEdge(graph, 30, 32, "0x8804B6D3", "0x88048157", LEFT, RIGHT);
+  addEdge(graph, 30, 32, LEFT, RIGHT);
 
-  addEdge(graph, 31, 33, "0x880481D3", "0x8804C6D0", STRAIGHT, STRAIGHT);
+  addEdge(graph, 31, 33, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 32, 41, "0x88048157", "0x8804A6D0", RIGHT, LEFT);
+  addEdge(graph, 32, 41, RIGHT, LEFT);
 
-  addEdge(graph, 33, 34, "0x8804C6D0", "0x880489D3", STRAIGHT, STRAIGHT);
-  addEdge(graph, 33, 35, "0x8804C6D0", "0x8804D0D0", RIGHT, LEFT);
+  addEdge(graph, 33, 34, STRAIGHT, STRAIGHT);
+  addEdge(graph, 33, 35, RIGHT, LEFT);
 
-  addEdge(graph, 34, 37, "0x880489D3", "0x8804A3D4", RIGHT, LEFT);
+  addEdge(graph, 34, 37, RIGHT, LEFT);
 
-  addEdge(graph, 35, 36, "0x8804D0D0", "0x880491D3", STRAIGHT, STRAIGHT);
+  addEdge(graph, 35, 36, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 36, 38, "0x880491D3", "0x8804E7D0", LEFT, RIGHT);
-  addEdge(graph, 36, 39, "0x880491D3", "0x8804A9D3", STRAIGHT, STRAIGHT);
+  addEdge(graph, 36, 38, LEFT, RIGHT);
+  addEdge(graph, 36, 39, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 37, 38, "0x8804A3D4", "0x8804E7D0", RIGHT, LEFT);
-  addEdge(graph, 37, 40, "0x8804A3D4", "0x8804A6D4", STRAIGHT, STRAIGHT);
+  addEdge(graph, 37, 38, RIGHT, LEFT);
+  addEdge(graph, 37, 40, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 38, 39, "0x8804E7D0", "0x8804A9D3", LEFT, RIGHT);
-  addEdge(graph, 38, 40, "0x8804E7D0", "0x8804A6D4", RIGHT, LEFT);
+  addEdge(graph, 38, 39, LEFT, RIGHT);
+  addEdge(graph, 38, 40, RIGHT, LEFT);
 
-  addEdge(graph, 40, 43, "0x8804A6D4", "0x8804C4D4", STRAIGHT, STRAIGHT);
+  addEdge(graph, 40, 43, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 41, 44, "0x8804A6D0", "0x8804ADD3", LEFT, RIGHT);
-  addEdge(graph, 41, 46, "0x8804A6D0", "0x8804B4D4", STRAIGHT, STRAIGHT);
+  addEdge(graph, 41, 44, LEFT, RIGHT);
+  addEdge(graph, 41, 46, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 42, 44, "0x8804BCD4", "0x8804ADD3", RIGHT, LEFT);
-  addEdge(graph, 42, 45, "0x8804BCD4", "0x8804D8D0", LEFT, RIGHT);
-  addEdge(graph, 42, 47, "0x8804BCD4", "0x8804E0D0",STRAIGHT, STRAIGHT);
+  addEdge(graph, 42, 44, RIGHT, LEFT);
+  addEdge(graph, 42, 45, LEFT, RIGHT);
+  addEdge(graph, 42, 47, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 43, 48, "0x8804C4D4", "0x8804CED4",STRAIGHT, STRAIGHT);
-  addEdge(graph, 43, 45, "0x8804C4D4", "0x8804D8D0", LEFT, RIGHT);
+  addEdge(graph, 43, 48, STRAIGHT, STRAIGHT);
+  addEdge(graph, 43, 45, LEFT, RIGHT);
 
-  addEdge(graph, 44, 45, "0x8804ADD3", "0x8804D8D0", STRAIGHT, STRAIGHT);
-  addEdge(graph, 44, 46, "0x8804ADD3", "0x8804B4D4", LEFT, RIGHT);
-  addEdge(graph, 44, 47, "0x8804ADD3", "0x8804E0D0", RIGHT, LEFT);
+  addEdge(graph, 44, 45, STRAIGHT, STRAIGHT);
+  addEdge(graph, 44, 46, LEFT, RIGHT);
+  addEdge(graph, 44, 47, RIGHT, LEFT);
 
-  addEdge(graph, 45, 47, "0x8804D8D0", "0x8804E0D0", LEFT, RIGHT);
-  addEdge(graph, 45, 48, "0x8804D8D0", "0x8804CED4", RIGHT, LEFT);
+  addEdge(graph, 45, 47, LEFT, RIGHT);
+  addEdge(graph, 45, 48, RIGHT, LEFT);
 
-  addEdge(graph, 46, 50, "0x8804B4D4", "0x8804D8D3", LEFT, RIGHT);
+  addEdge(graph, 46, 50, LEFT, RIGHT);
 
-  addEdge(graph, 47, 49, "0x8804E0D0", "0x8804B6D0", STRAIGHT, STRAIGHT);
+  addEdge(graph, 47, 49, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 48, 51, "0x8804CED4",  "0x8804AED0", RIGHT, LEFT);
+  addEdge(graph, 48, 51, RIGHT, LEFT);
 
-  addEdge(graph, 49, 50, "0x8804B6D0", "0x8804D8D3", RIGHT, LEFT);
-  addEdge(graph, 49, 51, "0x8804B6D0", "0x8804AED0", LEFT, RIGHT);
+  addEdge(graph, 49, 50, RIGHT, LEFT);
+  addEdge(graph, 49, 51, LEFT, RIGHT);
 
-  addEdge(graph, 50, 51, "0x8804D8D3", "0x8804AED0", STRAIGHT, STRAIGHT);
+  addEdge(graph, 50, 51, STRAIGHT, STRAIGHT);
+
+  // testing only
+  addEdge(graph, 52, 19, STRAIGHT, STRAIGHT);
+  addEdge(graph, 53, 12, STRAIGHT, STRAIGHT);
 
   g_src = START_VERTEX;
   g_dest = END_VERTEX;
@@ -651,13 +727,16 @@ char * getEdgeDir(int start, int end)
 void getPathOut()
 {
   // edge[i,j]
+  clearInstructions();
   int i = 0;
   int j = 1;
 
+  strcat(instructions, "#");
   while (path_out[j] != -1)
   {
       char temp[20];
-      sprintf(temp, "%s", graph->array[path_out[i]].head->id);
+//      sprintf(temp, "%d", (int)graph->array[path_out[i]].head->id);
+      sprintf(temp, "%d", (int)tags[path_out[i]]);
       strcat(instructions, temp);
       strcat(instructions, ",");
       strcat(instructions, getEdgeDir(path_out[i], path_out[j]));
@@ -666,10 +745,11 @@ void getPathOut()
       j++;
   }
   char end[20];
-  sprintf(end, "%d", g_dest);
+  sprintf(end, "%d", (int)g_dest);
   strcat(instructions, end);
   strcat(instructions, ",");
   strcat(instructions, HALT);
+  strcat(instructions, "!");
 }
 
 void clearTxBuffer()
@@ -701,7 +781,7 @@ void rm_first_letter(char * str, char * tmp){
   }
 }
 
-void clearInstructions()
+void clearInstructions(void)
 {
     for (int i = 0; i < INSTRUCTIONS_SIZE; i++)
     {
@@ -736,7 +816,10 @@ int main(void){
   initGpio();
   initLeuart();
   initGraph();
+  initArray();
   ble_usart_open();
+
+//  test_path();
 
   char str[20];
   char tmp[20];
@@ -762,13 +845,13 @@ int main(void){
       // DIVIDER only do this depending on case
       clearInstructions();
 
-      getStartVertex(); // set source
-      getEndVertex();   // set destination
+//      getStartVertex(); // set source
+//      getEndVertex();   // set destination
 
       bfs(graph, NUM_VERTICES, g_src, g_dest);
       getPathOut();
 
-      ble_write(instructions); // send to car
+//      ble_write(instructions); // send to car
       //DIVIDER end
 //-----------------------------------------------------------------------------------------------------------
 
@@ -799,6 +882,8 @@ int main(void){
       if(str[0] == 'r' && strlen(str) > 2){
           rm_first_letter(str, tmp);
           id = atoi(tmp);
+
+
           // check that the id is valid
           if((id & (0x8804 << 16)) == (0x8804 << 16)){
               // recalculate based on id
@@ -813,7 +898,7 @@ int main(void){
       if(str[0] == 'L' && str[1] == 'B'){
           // set destination to charger
           // car clears its path and will then go through lost protocol
-          g_dest = SOLAR;
+//          g_dest = SOLAR;   // disabled for testing
       }
 
       // Check if arrived
@@ -844,3 +929,25 @@ int main(void){
     EMU_EnterEM1();
   }
 }
+
+
+void test_path(void){
+  g_dest = HOME;
+  printGraph(graph);
+  bfs(graph, NUM_VERTICES, 0x88049CD1, g_dest);
+  getPathOut();
+  ble_write(instructions); // send to car
+  clearInstructions();
+
+//  g_dest = 0x8804A6D0;
+  bfs(graph, NUM_VERTICES, 0x88047D56, g_dest);
+  getPathOut();
+  ble_write(instructions); // send to car
+  clearInstructions();
+
+  bfs(graph, NUM_VERTICES, 0x88049E57, g_dest);
+  getPathOut();
+  ble_write(instructions); // send to car
+  clearInstructions();
+}
+
