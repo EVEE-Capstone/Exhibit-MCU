@@ -47,8 +47,8 @@
 #include "usart.h"
 
 #define MAX 10000
-#define NUM_VERTICES 54 // 52
-#define NUM_EDGES 178   // 174
+#define NUM_VERTICES 55 // 53
+#define NUM_EDGES 180   // 176
 
 #define START_VERTEX 0
 #define END_VERTEX 9
@@ -316,33 +316,40 @@ void addEdge(struct Graph *graph, int src, int dest, char * srcType, char * dest
     // Add an edge from src to dest.  A new node is
     // added to the adjacency list of src.  The node
     // is added at the beginning
-    struct AdjListNode *destNode = newAdjListNode(dest, tags[dest]);
-    struct GraphEdge *destEdge = newGraphEdge(src, dest, srcType);
 
-    for (int i = 0; i < NUM_EDGES; i++)
-    {
-        if (edges[i] == NULL)
-        {
-            edges[i] = destEdge;
-            break;
-        }
+    if(srcType != NULL){
+
+      struct AdjListNode *destNode = newAdjListNode(dest, tags[dest]);
+      struct GraphEdge *destEdge = newGraphEdge(src, dest, srcType);
+
+      for (int i = 0; i < NUM_EDGES; i++)
+      {
+          if (edges[i] == NULL)
+          {
+              edges[i] = destEdge;
+              break;
+          }
+      }
+      destNode->next = graph->array[src].head;
+      graph->array[src].head = destNode;
     }
-    destNode->next = graph->array[src].head;
-    graph->array[src].head = destNode;
     // Since graph is undirected, add an edge from
     // dest to src also
-    struct AdjListNode *srcNode = newAdjListNode(src, tags[src]);
-    struct GraphEdge *srcEdge = newGraphEdge(dest, src, destType);
-    for (int i = 0; i < NUM_EDGES; i++)
-    {
-        if (edges[i] == NULL)
-        {
-            edges[i] = srcEdge;
-            break;
-        }
+    if(destType != NULL){
+
+      struct AdjListNode *srcNode = newAdjListNode(src, tags[src]);
+      struct GraphEdge *srcEdge = newGraphEdge(dest, src, destType);
+      for (int i = 0; i < NUM_EDGES; i++)
+      {
+          if (edges[i] == NULL)
+          {
+              edges[i] = srcEdge;
+              break;
+          }
+      }
+      srcNode->next = graph->array[dest].head;
+      graph->array[dest].head = srcNode;
     }
-    srcNode->next = graph->array[dest].head;
-    graph->array[dest].head = srcNode;
 }
 // A utility function to print the adjacency list
 // representation of graph
@@ -531,9 +538,10 @@ void initArray(void){
   tags[49] = 0x8804B6D0;
   tags[50] = 0x8804D8D3;
   tags[51] = 0x8804AED0;
+  tags[52] = 0x8804E155;
   // testing only
-  tags[52] = 0x88049CD1;
-  tags[53] = 0x8804B4D3;
+  tags[53] = 0x88049CD1;
+  tags[54] = 0x8804B4D3;
 }
 
 int get_id_index(uint32_t id){
@@ -581,7 +589,7 @@ void initGraph()
 
   addEdge(graph, 9, 12, STRAIGHT, STRAIGHT);
 
-  addEdge(graph, 10, 20, RIGHT, LEFT);
+//  addEdge(graph, 10, 20, RIGHT, LEFT);
 
   addEdge(graph, 11, 13, RIGHT, LEFT);
   addEdge(graph, 11, 14, STRAIGHT, STRAIGHT);
@@ -681,14 +689,17 @@ void initGraph()
 
   addEdge(graph, 48, 51, RIGHT, LEFT);
 
-  addEdge(graph, 49, 50, RIGHT, LEFT);
+  addEdge(graph, 49, 50, RIGHT, NULL);
   addEdge(graph, 49, 51, LEFT, RIGHT);
 
-  addEdge(graph, 50, 51, STRAIGHT, STRAIGHT);
+  addEdge(graph, 50, 51, NULL, STRAIGHT);
+
+  addEdge(graph, 52, 20, RIGHT, LEFT);
+  addEdge(graph, 10, 52, RIGHT, LEFT);
 
   // testing only
-  addEdge(graph, 52, 53, LEFT, RIGHT);
-  addEdge(graph, 53, 49, STRAIGHT, STRAIGHT);
+  addEdge(graph, 53, 54, LEFT, RIGHT);
+  addEdge(graph, 54, 49, STRAIGHT, STRAIGHT);
 
   g_src = START_VERTEX;
   g_dest = END_VERTEX;
@@ -855,18 +866,20 @@ int main(void){
 
   while (1)
   {
-
+      //--------------------Comms between model and PWA ---------------------------------------
     // When notified by the RX handler, start processing the received data
     if (rxDataReady) // received from PWA
     {
       LEUART_IntDisable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Disable interrupts
 
 
-//--------------------Comms between model and PWA ---------------------------------------
+      if(rxBuffer[0] == 'q'){
+
+      }
+      else{
+
       // DIVIDER only do this depending on case
       clearInstructions();
-
-//      getStartVertex(); // set source
       getEndVertex();   // set destination
 
       bfs(graph, NUM_VERTICES, g_src, g_dest, previousID);
@@ -874,14 +887,14 @@ int main(void){
 
       ble_write(instructions); // send to car
       //DIVIDER end
-//-----------------------------------------------------------------------------------------------------------
 
+      }
       rxDataReady = 0;  // Indicate that we need new data
 
       LEUART_IntEnable(LEUART0, LEUART_IEN_RXDATAV | LEUART_IEN_TXC); // Re-enable interrupts
       LEUART_IntSet(LEUART0, LEUART_IFS_TXC);
     }
-
+    //-----------------------------------------------------------------------------------------------------------
     // Test reads with usart BLE
 
     // This will be handling communication coming from Car
