@@ -4,12 +4,12 @@
 // STRIP DEFINITIONS
 #define PIXEL_OFF 0
 
-#define ERROR_R 25
+#define ERROR_R 100
 #define ERROR_G 0
 #define ERROR_B 0
 
 #define HOUSE_R 255
-#define HOUSE_G 230
+#define HOUSE_G 115
 #define HOUSE_B 0
 
 #define FLOW_R 0
@@ -86,6 +86,9 @@ CRGB strip8[STRIP_8_LENGTH];
 #define HOUSE_CHARGE_LIGHT 6
 #define STATION_CHARGE_LIGHT 7
 #define GARAGE_CHARGE_LIGHT 8
+#define OUTAGE_LIGHT 9
+#define ERROR_PULSE 10
+#define STATION_LIGHT 11
 
 #define EXHIBIT_OFF 0
 #define REGULAR_GRID 1
@@ -174,26 +177,26 @@ void loop() {
     }
   }
   else if(exhibit_state == REGULAR_GRID) {    
-    strip_assignments[STRIP_0] = OUTFLOW;
-    strip_assignments[STRIP_1] = OUTFLOW;
-    strip_assignments[STRIP_2] = INFLOW;
-    strip_assignments[STRIP_3] = OUTFLOW;
-    strip_assignments[STRIP_4] = OUTFLOW;
-    strip_assignments[STRIP_5] = HOUSE;
-    strip_assignments[STRIP_6] = HOUSE;
-    strip_assignments[STRIP_7] = HOUSE;
-    strip_assignments[STRIP_8] = HOUSE;
+    strip_assignments[STRIP_0] = OUTFLOW; // main city line
+    strip_assignments[STRIP_1] = OUTFLOW; // building lines
+    strip_assignments[STRIP_2] = INFLOW; // wind/solar lines
+    strip_assignments[STRIP_3] = OUTFLOW; // battery line
+    strip_assignments[STRIP_4] = OUTFLOW; // station line 
+    strip_assignments[STRIP_5] = STATION_LIGHT; // station internal
+    strip_assignments[STRIP_6] = HOUSE; // substation internal
+    strip_assignments[STRIP_7] = HOUSE; // building internal
+    strip_assignments[STRIP_8] = HOUSE; // garage internal
   }
   else if(exhibit_state == POWER_OUTAGE) {
-    strip_assignments[STRIP_0] = OFF;
-    strip_assignments[STRIP_1] = OFF;
-    strip_assignments[STRIP_2] = OFF;
+    strip_assignments[STRIP_0] = OUTAGE_LIGHT;
+    strip_assignments[STRIP_1] = OUTAGE_LIGHT;
+    strip_assignments[STRIP_2] = INFLOW;
     strip_assignments[STRIP_3] = INFLOW;
-    strip_assignments[STRIP_4] = OFF;
-    strip_assignments[STRIP_5] = OFF;
+    strip_assignments[STRIP_4] = OUTAGE_LIGHT;
+    strip_assignments[STRIP_5] = SYSERROR;
     strip_assignments[STRIP_6] = HOUSE;
-    strip_assignments[STRIP_7] = OFF;
-    strip_assignments[STRIP_8] = OFF;
+    strip_assignments[STRIP_7] = SYSERROR;
+    strip_assignments[STRIP_8] = SYSERROR;
   }
   else if(exhibit_state == NANO_GRID) {
     // everything on city side is off for nano grid
@@ -214,7 +217,7 @@ void loop() {
     strip_assignments[STRIP_2] = INFLOW;
     strip_assignments[STRIP_3] = OUTFLOW;
     strip_assignments[STRIP_4] = OUTFLOW;
-    strip_assignments[STRIP_5] = HOUSE; // charge station internal
+    strip_assignments[STRIP_5] = STATION_LIGHT; // charge station internal
     strip_assignments[STRIP_6] = HOUSE;
     strip_assignments[STRIP_7] = HOUSE;
     strip_assignments[STRIP_8] = HOUSE;
@@ -238,26 +241,26 @@ void loop() {
     strip_assignments[STRIP_2] = INFLOW;
     strip_assignments[STRIP_3] = OUTFLOW;
     strip_assignments[STRIP_4] = OUTFLOW;
-    strip_assignments[STRIP_5] = HOUSE; // charge station internal
+    strip_assignments[STRIP_5] = STATION_LIGHT; // charge station internal
     strip_assignments[STRIP_6] = HOUSE;
     strip_assignments[STRIP_7] = HOUSE;
     strip_assignments[STRIP_8] = GARAGE_CHARGE_LIGHT;
   }
   else if(exhibit_state == OUTAGE_CHARGE) {
-    strip_assignments[STRIP_0] = OFF;
-    strip_assignments[STRIP_1] = OFF;
-    strip_assignments[STRIP_2] = OFF;
+    strip_assignments[STRIP_0] = OUTAGE_LIGHT;
+    strip_assignments[STRIP_1] = OUTAGE_LIGHT;
+    strip_assignments[STRIP_2] = OUTAGE_LIGHT;
     strip_assignments[STRIP_3] = INFLOW;
-    strip_assignments[STRIP_4] = OFF;
-    strip_assignments[STRIP_5] = OFF;
+    strip_assignments[STRIP_4] = OUTAGE_LIGHT;
+    strip_assignments[STRIP_5] = SYSERROR;
     strip_assignments[STRIP_6] = HOUSE;
-    strip_assignments[STRIP_7] = OFF;
-    strip_assignments[STRIP_8] = OFF;
+    strip_assignments[STRIP_7] = SYSERROR;
+    strip_assignments[STRIP_8] = SYSERROR;
   }
   else {
     // all strips error
     for(int strip_num = 0; strip_num < NUM_STRIPS; strip_num++) {
-      strip_assignments[strip_num] = SYSERROR;
+      strip_assignments[strip_num] = ERROR_PULSE;
     }
   }
   
@@ -289,7 +292,40 @@ void display_strips(int * strip_pattern) {
     if(strip_pattern[8] == GARAGE_CHARGE_LIGHT) {
       garage_charge_pattern(STRIP_8_LENGTH, STRIP_8, pulse_anim_frame);
     }
+    if(strip_pattern[5] == STATION_LIGHT) {
+      station_pattern(STRIP_5_LENGTH, STRIP_5);
+    }
     // *********************************
+
+    // **** ERROR PULSE PATTERN ********
+    if(strip_pattern[0] == ERROR_PULSE) {
+      error_pulse_pattern(STRIP_0_LENGTH, STRIP_0, pulse_anim_frame);
+    }
+    if(strip_pattern[1] == ERROR_PULSE) {
+      error_pulse_pattern(STRIP_1_LENGTH, STRIP_1, pulse_anim_frame);
+    }
+    if(strip_pattern[2] == ERROR_PULSE) {
+      error_pulse_pattern(STRIP_2_LENGTH, STRIP_2, pulse_anim_frame);
+    }
+    if(strip_pattern[3] == ERROR_PULSE) {
+      error_pulse_pattern(STRIP_3_LENGTH, STRIP_3, pulse_anim_frame);
+    }
+    if(strip_pattern[4] == ERROR_PULSE) {
+      error_pulse_pattern(STRIP_4_LENGTH, STRIP_4, pulse_anim_frame);
+    }
+    if(strip_pattern[5] == ERROR_PULSE) {
+      error_pulse_pattern(STRIP_5_LENGTH, STRIP_5, pulse_anim_frame);
+    }
+    if(strip_pattern[6] == ERROR_PULSE) {
+      error_pulse_pattern(STRIP_6_LENGTH, STRIP_6, pulse_anim_frame);
+    }
+    if(strip_pattern[7] == ERROR_PULSE) {
+      error_pulse_pattern(STRIP_7_LENGTH, STRIP_7, pulse_anim_frame);
+    }
+    if(strip_pattern[8] == ERROR_PULSE) {
+      error_pulse_pattern(STRIP_8_LENGTH, STRIP_8, pulse_anim_frame);
+    }
+    // *****************************
     
     // ***** TURN OFF PATTERN *********
     if(strip_pattern[0] == OFF) {
@@ -441,6 +477,36 @@ void display_strips(int * strip_pattern) {
     }
     // ***** ***** *****
 
+    // ******* OUTAGE LIGHT PATTERN *********
+    if(strip_pattern[0] == OUTAGE_LIGHT) {
+      outage_light_pattern(STRIP_0_LENGTH, STRIP_0);
+    }
+    if(strip_pattern[1] == OUTAGE_LIGHT) {
+      outage_light_pattern(STRIP_1_LENGTH, STRIP_1);
+    }
+    if(strip_pattern[2] == OUTAGE_LIGHT) {
+      outage_light_pattern(STRIP_2_LENGTH, STRIP_2);
+    }
+    if(strip_pattern[3] == OUTAGE_LIGHT) {
+      outage_light_pattern(STRIP_3_LENGTH, STRIP_3);
+    }
+    if(strip_pattern[4] == OUTAGE_LIGHT) {
+      outage_light_pattern(STRIP_4_LENGTH, STRIP_4);
+    }
+    if(strip_pattern[5] == OUTAGE_LIGHT) {
+      outage_light_pattern(STRIP_5_LENGTH, STRIP_5);
+    }
+    if(strip_pattern[6] == OUTAGE_LIGHT) {
+      outage_light_pattern(STRIP_6_LENGTH, STRIP_6);
+    }
+    if(strip_pattern[7] == OUTAGE_LIGHT) {
+      outage_light_pattern(STRIP_7_LENGTH, STRIP_7);
+    }
+    if(strip_pattern[8] == OUTAGE_LIGHT) {
+      outage_light_pattern(STRIP_8_LENGTH, STRIP_8);
+    }
+    // ***********************
+
     FastLED.show();
     delay(ANIM_FREQ);
   }
@@ -461,6 +527,32 @@ void house_light_pattern(int strip_length, int strip_num) {
   while(house_pixel_index < strip_length) {
     setPixel(house_pixel_index, strip_num, HOUSE_R, HOUSE_G, HOUSE_B);
     house_pixel_index++;
+  }
+}
+
+void station_pattern(int strip_length, int strip_num) {
+  // display darkness in charge area
+  // but first display regular house for first 4
+  int pixel_index = 0;
+  for(int i = 0; i < 3; i++) {
+    setPixel(pixel_index, strip_num, HOUSE_R, HOUSE_G, HOUSE_B);
+    pixel_index++;
+  }
+  for(int i = pixel_index; i < strip_length; i++) {
+    setPixel(pixel_index, strip_num, 0, 0, 0);
+    pixel_index++;
+  }
+}
+
+// houses flash red til car arrives
+// buildings flash red
+// all grid lines solid red
+
+void outage_light_pattern(int strip_length, int strip_num) {
+  int pixel_index = 0;
+  while(pixel_index < strip_length) {
+    setPixel(pixel_index, strip_num, 100, 0, 0);
+    pixel_index++;
   }
 }
 
@@ -576,9 +668,9 @@ void station_charge_pattern(int strip_length, int strip_num, int anim_frame) {
   }
   for(int i = pixel_index; i < strip_length; i++) {
     if(anim_frame < 19)
-      setPixel(pixel_index, strip_num, CHARGE_R, anim_frame*14, CHARGE_B);  
+      setPixel(pixel_index, strip_num, 5.8*anim_frame, anim_frame*14, CHARGE_B);  
     else
-      setPixel(pixel_index, strip_num, CHARGE_R, -15*anim_frame + 540, CHARGE_B);
+      setPixel(pixel_index, strip_num, -6*anim_frame + 224, -15*anim_frame + 540, CHARGE_B);
  
     pixel_index++;
   }
@@ -589,14 +681,25 @@ void garage_charge_pattern(int strip_length, int strip_num, int anim_frame) {
   int pixel_index = 0;
   for(int i = 0; i < strip_length; i++) {
     if(anim_frame < 19)
-      setPixel(pixel_index, strip_num, CHARGE_R, anim_frame*14, CHARGE_B);  
+      setPixel(pixel_index, strip_num, 5.8*anim_frame, anim_frame*14, CHARGE_B);  
     else
-      setPixel(pixel_index, strip_num, CHARGE_R, -15*anim_frame + 540, CHARGE_B);
+      setPixel(pixel_index, strip_num, -6*anim_frame + 224, -15*anim_frame + 540, CHARGE_B);
  
     pixel_index++;
   }
 }
 
+void error_pulse_pattern(int strip_length, int strip_num, int anim_frame) {
+  
+  for(int pixel_index = 0; pixel_index < strip_length; pixel_index++) {
+    if(anim_frame < 19)
+      setPixel(pixel_index, strip_num, anim_frame*14, 0, 0);  
+    else
+      setPixel(pixel_index, strip_num, -15*anim_frame + 540, 0, 0);
+ 
+    pixel_index++;
+  }
+}
 
 void setPixel(int pixel_index, int strip_num, int r, int g, int b) {
   if(strip_num == STRIP_0) {
